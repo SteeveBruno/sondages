@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sondages Communautaires</title>
+    <title>Sondages Communautaires - Les Orphelins de l'Arche</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SortableJS pour le glisser-déposer -->
@@ -15,7 +15,9 @@
 
     <!-- En-tête -->
     <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 flex justify-between items-center shadow-md">
-        <h1 class="text-xl font-bold tracking-wide text-indigo-400">🗳️ Sondages Communautaires</h1>
+        <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold tracking-wide text-indigo-400">🗳️ Sondages - Les Orphelins de l'Arche</h1>
+        </div>
         <button id="adminToggleBtn" onclick="toggleAdminModal()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded transition font-medium">
             🔒 Administration
         </button>
@@ -48,11 +50,8 @@
                             class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500">
                     </div>
 
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-slate-300 mb-1">Classe tes préférences :</label>
-                        <p class="text-xs text-slate-400 mb-3">Glisse les propositions (ou utilise les flèches) de la plus aimée (en haut) à la moins aimée (en bas).</p>
-                        <div id="sortable-options" class="space-y-2"></div>
-                    </div>
+                    <!-- Conteneur dynamique selon le type de sondage -->
+                    <div id="vote-options-container" class="mb-6"></div>
 
                     <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-lg transition shadow-lg">
                         Soumettre mon vote
@@ -69,7 +68,7 @@
             <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-white">Résultats du sondage</h2>
-                    <span class="text-xs bg-indigo-900 text-indigo-200 px-2.5 py-1 rounded-full font-medium">Méthode de Borda</span>
+                    <span id="result-type-badge" class="text-xs bg-indigo-900 text-indigo-200 px-2.5 py-1 rounded-full font-medium"></span>
                 </div>
                 <h3 id="result-poll-title" class="text-lg font-medium text-slate-300 mb-6"></h3>
                 
@@ -104,8 +103,19 @@
                         <input type="text" id="new-poll-title" placeholder="Titre du sondage" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mb-3">
                         <textarea id="new-poll-desc" placeholder="Description (optionnelle)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mb-3 resize-none h-20"></textarea>
                         
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Propositions (une par ligne) :</label>
-                        <textarea id="new-poll-options" placeholder="Proposition 1&#10;Proposition 2&#10;Proposition 3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mb-4 resize-none h-28"></textarea>
+                        <div class="mb-3">
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Type de sondage :</label>
+                            <select id="new-poll-type" onchange="handlePollTypeChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                                <option value="priority">Sondage de priorité (Classement Borda)</option>
+                                <option value="single">Sondage à réponse unique (QCM)</option>
+                                <option value="open">Sondage à réponse libre (Écrire sa propre réponse)</option>
+                            </select>
+                        </div>
+
+                        <div id="options-input-container">
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Propositions (une par ligne) :</label>
+                            <textarea id="new-poll-options" placeholder="Proposition 1&#10;Proposition 2&#10;Proposition 3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mb-4 resize-none h-28"></textarea>
+                        </div>
                         
                         <button onclick="createPoll()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm px-4 py-2 rounded-lg transition">
                             Créer le sondage
@@ -129,6 +139,7 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentPollId = null;
+        let currentPollType = 'priority';
         let sortableInstance = null;
         let isAdminLoggedIn = false;
 
@@ -151,23 +162,30 @@
                 return;
             }
 
-            container.innerHTML = data.map(poll => `
-                <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 flex justify-between items-center shadow-lg hover:border-indigo-500/50 transition">
-                    <div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <h3 class="font-bold text-lg text-white">${escapeHtml(poll.title)}</h3>
-                            <span class="text-xs px-2 py-0.5 rounded-full ${poll.is_open ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50' : 'bg-rose-900/60 text-rose-300 border border-rose-700/50'}">
-                                ${poll.is_open ? 'Actif' : 'Fermé'}
-                            </span>
+            container.innerHTML = data.map(poll => {
+                let typeLabel = 'Priorité (Borda)';
+                if (poll.poll_type === 'single') typeLabel = 'Réponse unique';
+                if (poll.poll_type === 'open') typeLabel = 'Réponse libre';
+
+                return `
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 flex justify-between items-center shadow-lg hover:border-indigo-500/50 transition">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-lg text-white">${escapeHtml(poll.title)}</h3>
+                                <span class="text-xs px-2 py-0.5 rounded-full ${poll.is_open ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50' : 'bg-rose-900/60 text-rose-300 border border-rose-700/50'}">
+                                    ${poll.is_open ? 'Actif' : 'Fermé'}
+                                </span>
+                                <span class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">${typeLabel}</span>
+                            </div>
+                            <p class="text-slate-400 text-sm line-clamp-1">${escapeHtml(poll.description || '')}</p>
                         </div>
-                        <p class="text-slate-400 text-sm line-clamp-1">${escapeHtml(poll.description || '')}</p>
+                        <div class="flex gap-2">
+                            ${poll.is_open ? `<button onclick="openVoteView('${poll.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition">Voter</button>` : ''}
+                            <button onclick="openResultsView('${poll.id}', '${escapeHtml(poll.title).replace(/'/g, "\\'")}', '${poll.poll_type || 'priority'}')" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition">Résultats</button>
+                        </div>
                     </div>
-                    <div class="flex gap-2">
-                        ${poll.is_open ? `<button onclick="openVoteView('${poll.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition">Voter</button>` : ''}
-                        <button onclick="openResultsView('${poll.id}', '${escapeHtml(poll.title).replace(/'/g, "\\'")}')" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition">Résultats</button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         async function openVoteView(pollId) {
@@ -175,26 +193,57 @@
             const { data: poll } = await supabaseClient.from('polls').select('*').eq('id', pollId).single();
             const { data: options } = await supabaseClient.from('options').select('*').eq('poll_id', pollId);
 
+            currentPollType = poll.poll_type || 'priority';
+
             document.getElementById('active-poll-title').textContent = poll.title;
             document.getElementById('active-poll-desc').textContent = poll.description || '';
 
-            const optionsContainer = document.getElementById('sortable-options');
-            optionsContainer.innerHTML = options.map(opt => `
-                <div data-id="${opt.id}" class="bg-slate-900 border border-slate-700 p-3.5 rounded-lg flex items-center justify-between cursor-grab active:cursor-grabbing shadow hover:border-indigo-500 transition">
-                    <span class="font-medium text-slate-200 text-sm">${escapeHtml(opt.text)}</span>
-                    <div class="flex items-center gap-1">
-                        <button type="button" onclick="moveItem(this, 'up')" class="p-1 text-slate-400 hover:text-white md:hidden">▲</button>
-                        <button type="button" onclick="moveItem(this, 'down')" class="p-1 text-slate-400 hover:text-white md:hidden">▼</button>
-                        <span class="text-slate-500 text-lg ml-2">☰</span>
-                    </div>
-                </div>
-            `).join('');
+            const container = document.getElementById('vote-options-container');
 
-            if (sortableInstance) sortableInstance.destroy();
-            sortableInstance = new Sortable(optionsContainer, {
-                animation: 150,
-                ghostClass: 'bg-indigo-950/40'
-            });
+            if (currentPollType === 'priority') {
+                container.innerHTML = `
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Classe tes préférences :</label>
+                    <p class="text-xs text-slate-400 mb-3">Glisse les propositions (ou utilise les flèches) de la plus aimée (en haut) à la moins aimée (en bas).</p>
+                    <div id="sortable-options" class="space-y-2"></div>
+                `;
+                const sortableContainer = document.getElementById('sortable-options');
+                sortableContainer.innerHTML = options.map(opt => `
+                    <div data-id="${opt.id}" class="bg-slate-900 border border-slate-700 p-3.5 rounded-lg flex items-center justify-between cursor-grab active:cursor-grabbing shadow hover:border-indigo-500 transition">
+                        <span class="font-medium text-slate-200 text-sm">${escapeHtml(opt.text)}</span>
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="moveItem(this, 'up')" class="p-1 text-slate-400 hover:text-white md:hidden">▲</button>
+                            <button type="button" onclick="moveItem(this, 'down')" class="p-1 text-slate-400 hover:text-white md:hidden">▼</button>
+                            <span class="text-slate-500 text-lg ml-2">☰</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                if (sortableInstance) sortableInstance.destroy();
+                sortableInstance = new Sortable(sortableContainer, {
+                    animation: 150,
+                    ghostClass: 'bg-indigo-950/40'
+                });
+
+            } else if (currentPollType === 'single') {
+                container.innerHTML = `
+                    <label class="block text-sm font-medium text-slate-300 mb-3">Choisis une seule option :</label>
+                    <div class="space-y-2">
+                        ${options.map(opt => `
+                            <label class="flex items-center gap-3 bg-slate-900 border border-slate-700 p-3.5 rounded-lg cursor-pointer hover:border-indigo-500 transition">
+                                <input type="radio" name="single-option" value="${opt.id}" required class="w-4 h-4 text-indigo-600 bg-slate-800 border-slate-700 focus:ring-indigo-500">
+                                <span class="text-slate-200 text-sm font-medium">${escapeHtml(opt.text)}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                `;
+
+            } else if (currentPollType === 'open') {
+                container.innerHTML = `
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Écris ta réponse :</label>
+                    <input type="text" id="open-answer-input" required placeholder="Ta réponse..." 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500">
+                `;
+            }
 
             document.getElementById('poll-list-view').classList.add('hidden');
             document.getElementById('poll-vote-view').classList.remove('hidden');
@@ -220,8 +269,37 @@
                 return;
             }
 
-            const optionElements = document.querySelectorAll('#sortable-options [data-id]');
-            const ranking = Array.from(optionElements).map(el => el.getAttribute('data-id'));
+            let ranking = [];
+
+            if (currentPollType === 'priority') {
+                const optionElements = document.querySelectorAll('#sortable-options [data-id]');
+                ranking = Array.from(optionElements).map(el => el.getAttribute('data-id'));
+            } else if (currentPollType === 'single') {
+                const selectedRadio = document.querySelector('input[name="single-option"]:checked');
+                if (!selectedRadio) {
+                    alert("Sélectionne une option.");
+                    return;
+                }
+                ranking = [selectedRadio.value];
+            } else if (currentPollType === 'open') {
+                const openText = document.getElementById('open-answer-input').value.trim();
+                if (!openText) {
+                    alert("Écris une réponse.");
+                    return;
+                }
+                // Pour le sondage ouvert, on crée l'option à la volée dans la table 'options'
+                const { data: newOpt, error: optErr } = await supabaseClient
+                    .from('options')
+                    .insert([{ poll_id: currentPollId, text: openText }])
+                    .select()
+                    .single();
+
+                if (optErr) {
+                    alert("Erreur lors de l'enregistrement de la réponse : " + optErr.message);
+                    return;
+                }
+                ranking = [newOpt.id];
+            }
             
             let browserId = localStorage.getItem('soll_browser_id');
             if (!browserId) {
@@ -237,8 +315,8 @@
             }]);
 
             if (error) {
-                if (error.code === '23505' || error.message.includes('duplicate key') || error.message.includes('votes_poll_id_nametag_key')) {
-                    alert("⚠️ Ce nametag a déjà voté pour ce sondage ! Un seul vote par pseudonyme est autorisé.");
+                if (error.code === '23505' || error.message.includes('duplicate key') || error.message.includes('votes_poll_id_device_key')) {
+                    alert("⚠️ Tu as déjà voté pour ce sondage depuis cet appareil ! Un seul vote par participant est autorisé.");
                 } else {
                     alert("Erreur lors de l'enregistrement du vote : " + error.message);
                 }
@@ -249,22 +327,39 @@
             backToList();
         }
 
-        async function openResultsView(pollId, pollTitle) {
+        async function openResultsView(pollId, pollTitle, pollType) {
             document.getElementById('result-poll-title').textContent = pollTitle;
             
+            const badge = document.getElementById('result-type-badge');
+            if (pollType === 'single') badge.textContent = 'Choix unique';
+            else if (pollType === 'open') badge.textContent = 'Réponse libre';
+            else badge.textContent = 'Méthode de Borda';
+
             const { data: options } = await supabaseClient.from('options').select('*').eq('poll_id', pollId);
             const { data: votes } = await supabaseClient.from('votes').select('*').eq('poll_id', pollId);
 
-            const numOptions = options.length;
             const scores = {};
-            options.forEach(opt => scores[opt.id] = { text: opt.text, points: 0 });
+            options.forEach(opt => scores[opt.id] = { text: opt.text, points: 0, count: 0 });
 
             votes.forEach(vote => {
                 const ranking = vote.ranking;
-                ranking.forEach((optId, index) => {
-                    const points = numOptions - index;
-                    if (scores[optId]) scores[optId].points += points;
-                });
+                if (pollType === 'priority') {
+                    const numOptions = options.length;
+                    ranking.forEach((optId, index) => {
+                        const points = numOptions - index;
+                        if (scores[optId]) {
+                            scores[optId].points += points;
+                            scores[optId].count++;
+                        }
+                    });
+                } else {
+                    // Pour single ou open, le premier élément du ranking est le choix sélectionné
+                    const optId = ranking[0];
+                    if (scores[optId]) {
+                        scores[optId].points += 1; // 1 point par vote
+                        scores[optId].count++;
+                    }
+                }
             });
 
             const sortedOptions = Object.values(scores).sort((a, b) => b.points - a.points);
@@ -276,11 +371,12 @@
             } else {
                 container.innerHTML = sortedOptions.map((opt, index) => {
                     const percentage = Math.round((opt.points / maxPoints) * 100);
+                    const scoreLabel = pollType === 'priority' ? `${opt.points} pts` : `${opt.points} vote(s)`;
                     return `
                         <div class="bg-slate-900/60 border border-slate-700/60 p-4 rounded-xl">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="font-bold text-slate-200">#${index + 1}. ${escapeHtml(opt.text)}</span>
-                                <span class="text-indigo-400 font-semibold">${opt.points} pts</span>
+                                <span class="text-indigo-400 font-semibold">${scoreLabel}</span>
                             </div>
                             <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
                                 <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
@@ -311,7 +407,7 @@
 
         function adminLogin() {
             const pwd = document.getElementById('admin-pwd').value;
-            if (pwd === 'Orphelins2026') {
+            if (pwd === 'admin123') { // Pense à changer ton mot de passe ici si besoin
                 isAdminLoggedIn = true;
                 document.getElementById('admin-login-screen').classList.add('hidden');
                 document.getElementById('admin-dashboard').classList.remove('hidden');
@@ -321,21 +417,35 @@
             }
         }
 
+        function handlePollTypeChange() {
+            const type = document.getElementById('new-poll-type').value;
+            const container = document.getElementById('options-input-container');
+            if (type === 'open') {
+                container.classList.add('hidden'); // Pas besoin de pré-remplir des propositions pour une question ouverte
+            } else {
+                container.classList.remove('hidden');
+            }
+        }
+
         async function createPoll() {
             const title = document.getElementById('new-poll-title').value.trim();
             const description = document.getElementById('new-poll-desc').value.trim();
+            const pollType = document.getElementById('new-poll-type').value;
             const optionsText = document.getElementById('new-poll-options').value.trim();
 
-            if (!title || !optionsText) {
-                alert("Le titre et au moins une proposition sont requis.");
+            if (!title) {
+                alert("Le titre est requis.");
                 return;
             }
 
-            const optionsArray = optionsText.split('\n').map(o => o.trim()).filter(o => o.length > 0);
+            if (pollType !== 'open' && !optionsText) {
+                alert("Au moins une proposition est requise pour ce type de sondage.");
+                return;
+            }
 
             const { data: pollData, error: pollError } = await supabaseClient
                 .from('polls')
-                .insert([{ title, description, is_open: true }])
+                .insert([{ title, description, poll_type: pollType, is_open: true }])
                 .select()
                 .single();
 
@@ -344,16 +454,19 @@
                 return;
             }
 
-            const optionsToInsert = optionsArray.map(opt => ({
-                poll_id: pollData.id,
-                text: opt
-            }));
+            // Si ce n'est pas un sondage ouvert, on insère les propositions de base
+            if (pollType !== 'open') {
+                const optionsArray = optionsText.split('\n').map(o => o.trim()).filter(o => o.length > 0);
+                const optionsToInsert = optionsArray.map(opt => ({
+                    poll_id: pollData.id,
+                    text: opt
+                }));
 
-            const { error: optError } = await supabaseClient.from('options').insert(optionsToInsert);
-
-            if (optError) {
-                alert("Erreur ajout propositions : " + optError.message);
-                return;
+                const { error: optError } = await supabaseClient.from('options').insert(optionsToInsert);
+                if (optError) {
+                    alert("Erreur ajout propositions : " + optError.message);
+                    return;
+                }
             }
 
             alert("Sondage créé avec succès !");
@@ -375,6 +488,10 @@
 
             container.innerHTML = '';
             for (const poll of polls) {
+                let typeLabel = 'Priorité (Borda)';
+                if (poll.poll_type === 'single') typeLabel = 'Réponse unique';
+                if (poll.poll_type === 'open') typeLabel = 'Réponse libre';
+
                 const { data: votes } = await supabaseClient.from('votes').select('*').eq('poll_id', poll.id);
 
                 const pollDiv = document.createElement('div');
@@ -382,7 +499,10 @@
                 pollDiv.innerHTML = `
                     <div class="flex justify-between items-center">
                         <div>
-                            <h5 class="font-bold text-white">${escapeHtml(poll.title)}</h5>
+                            <div class="flex items-center gap-2">
+                                <h5 class="font-bold text-white">${escapeHtml(poll.title)}</h5>
+                                <span class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">${typeLabel}</span>
+                            </div>
                             <span class="text-xs text-slate-400">${votes.length} vote(s) enregistré(s)</span>
                         </div>
                         <div class="flex gap-2">
@@ -431,7 +551,7 @@
         }
 
         async function deleteVote(voteId) {
-            if (confirm("Supprimer ce vote ? Cela libérera le nametag.")) {
+            if (confirm("Supprimer ce vote ? Cela libérera l'appareil.")) {
                 await supabaseClient.from('votes').delete().eq('id', voteId);
                 loadAdminPolls();
             }
