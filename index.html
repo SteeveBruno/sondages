@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sondages Communautaires</title>
+    <!-- Tailwind CSS pour un design propre et moderne -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SortableJS pour le glisser-déposer tactile et souris -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <!-- Client Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- En-tête -->
+    <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 flex justify-between items-center shadow-md">
+        <h1 class="text-xl font-bold tracking-wide text-indigo-400">🗳️ Sondages Communautaires</h1>
+        <button id="adminToggleBtn" onclick="toggleAdminModal()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded transition font-medium">
+            🔒 Administration
+        </button>
+    </header>
+
+    <!-- Contenu Principal -->
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-2xl">
+        
+        <!-- Vue Liste des Sondages -->
+        <div id="poll-list-view">
+            <h2 class="text-2xl font-bold mb-6 text-slate-200">Sondages disponibles</h2>
+            <div id="polls-container" class="space-y-4">
+                <!-- Chargé dynamiquement -->
+                <p class="text-slate-400 text-center py-8">Chargement des sondages...</p>
+            </div>
+        </div>
+
+        <!-- Vue Vote / Détail du Sondage -->
+        <div id="poll-vote-view" class="hidden">
+            <button onclick="backToList()" class="text-indigo-400 hover:underline mb-4 text-sm flex items-center gap-1">
+                ← Retour aux sondages
+            </button>
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
+                <h2 id="active-poll-title" class="text-2xl font-bold mb-2 text-white"></h2>
+                <p id="active-poll-desc" class="text-slate-400 text-sm mb-6"></p>
+
+                <form id="vote-form" onsubmit="submitVote(event)">
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Ton Nametag (pseudonyme de jeu) :</label>
+                        <input type="text" id="nametag-input" required placeholder="Ex: GigaChad76" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Classe tes préférences :</label>
+                        <p class="text-xs text-slate-400 mb-3">Glisse les propositions (ou utilise les flèches) de la plus aimée (en haut) à la moins aimée (en bas).</p>
+                        <div id="sortable-options" class="space-y-2">
+                            <!-- Les propositions injectées ici -->
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-lg transition shadow-lg">
+                        Soumettre mon vote
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Vue Résultats -->
+        <div id="poll-results-view" class="hidden">
+            <button onclick="backToList()" class="text-indigo-400 hover:underline mb-4 text-sm flex items-center gap-1">
+                ← Retour aux sondages
+            </button>
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-white">Résultats du sondage</h2>
+                    <span class="text-xs bg-indigo-900 text-indigo-200 px-2.5 py-1 rounded-full font-medium">Méthode de Borda</span>
+                </div>
+                <h3 id="result-poll-title" class="text-lg font-medium text-slate-300 mb-6"></h3>
+                
+                <div id="results-container" class="space-y-4">
+                    <!-- Graphiques de résultats injectés ici -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modale Administration -->
+    <div id="admin-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-850">
+                <h3 class="font-bold text-lg text-white">Panneau d'Administration</h3>
+                <button onclick="toggleAdminModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-grow" id="admin-content">
+                <!-- Login Admin (si non connecté) -->
+                <div id="admin-login-screen">
+                    <p class="text-slate-300 mb-4 text-sm">Entre le mot de passe administrateur :</p>
+                    <input type="password" id="admin-pwd" placeholder="Mot de passe" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white mb-4 focus:outline-none focus:border-indigo-500">
+                    <button onclick="adminLogin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg transition">
+                        Se connecter
+                    </button>
+                </div>
+
+                <!-- Dashboard Admin (si connecté) -->
+                <div id="admin-dashboard" class="hidden space-y-8">
+                    <!-- Créer un sondage -->
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                        <h4 class="font-bold text-md text-indigo-400 mb-3">Créer un nouveau sondage</h4>
+                        <input type="text" id="new-poll-title" placeholder="Titre du sondage" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mb-3">
+                        <textarea id="new-poll-desc" placeholder="Description (optionnelle)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mb-3 resize-none h-20"></textarea>
+                        
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Propositions (une par ligne) :</label>
+                        <textarea id="new-poll-options" placeholder="Proposition 1&#10;Proposition 2&#10;Proposition 3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mb-4 resize-none h-28"></textarea>
+                        
+                        <button onclick="createPoll()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm px-4 py-2 rounded-lg transition">
+                            Créer le sondage
+                        </button>
+                    </div>
+
+                    <!-- Liste des sondages existants & Gestion -->
+                    <div>
+                        <h4 class="font-bold text-md text-indigo-400 mb-3">Gestion des sondages et des votes</h4>
+                        <div id="admin-polls-list" class="space-y-4">
+                            <!-- Injecté dynamiquement -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de logique de l'application -->
+    <script>
+        // ==========================================
+        // CONFIGURATION SUPABASE (Colle tes clés ici)
+        // ==========================================
+        const SUPABASE_URL = 'COLLE_TON_PROJECT_URL_ICI';
+        const SUPABASE_ANON_KEY = 'COLLE_TA_CLE_ANON_ICI';
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentPollId = null;
+        let sortableInstance = null;
+        let isAdminLoggedIn = false;
+
+        // Charger les sondages au démarrage
+        window.addEventListener('DOMContentLoaded', loadPolls);
+
+        async function loadPolls() {
+            const container = document.getElementById('polls-container');
+            const { data, error } = await supabaseClient
+                .from('polls')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                container.innerHTML = `<p class="text-red-400 text-center">Erreur de chargement : ${error.message}</p>`;
+                return;
+            }
+
+            if (data.length === 0) {
+                container.innerHTML = `<p class="text-slate-400 text-center py-8">Aucun sondage pour le moment.</p>`;
+                return;
+            }
+
+            container.innerHTML = data.map(poll => `
+                <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 flex justify-between items-center shadow-lg hover:border-indigo-500/50 transition">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <h3 class="font-bold text-lg text-white">${escapeHtml(poll.title)}</h3>
+                            <span class="text-xs px-2 py-0.5 rounded-full ${poll.is_open ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50' : 'bg-rose-900/60 text-rose-300 border border-rose-700/50'}">
+                                ${poll.is_open ? 'Actif' : 'Fermé'}
+                            </span>
+                        </div>
+                        <p class="text-slate-400 text-sm line-clamp-1">${escapeHtml(poll.description || '')}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        ${poll.is_open ? `<button onclick="openVoteView('${poll.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition">Voter</button>` : ''}
+                        <button onclick="openResultsView('${poll.id}', '${escapeHtml(poll.title).replace(/'/g, "\\'")}')" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition">Résultats</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function openVoteView(pollId) {
+            currentPollId = pollId;
+            const { data: poll } = await supabaseClient.from('polls').select('*').eq('id', pollId).single();
+            const { data: options } = await supabaseClient.from('options').select('*').eq('poll_id', pollId);
+
+            document.getElementById('active-poll-title').textContent = poll.title;
+            document.getElementById('active-poll-desc').textContent = poll.description || '';
+
+            const optionsContainer = document.getElementById('sortable-options');
+            optionsContainer.innerHTML = options.map(opt => `
+                <div data-id="${opt.id}" class="bg-slate-900 border border-slate-700 p-3.5 rounded-lg flex items-center justify-between cursor-grab active:cursor-grabbing shadow hover:border-indigo-500 transition">
+                    <span class="font-medium text-slate-200 text-sm">${escapeHtml(opt.text)}</span>
+                    <div class="flex items-center gap-1">
+                        <button type="button" onclick="moveItem(this, 'up')" class="p-1 text-slate-400 hover:text-white md:hidden">▲</button>
+                        <button type="button" onclick="moveItem(this, 'down')" class="p-1 text-slate-400 hover:text-white md:hidden">▼</button>
+                        <span class="text-slate-500 text-lg ml-2">☰</span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Activer le Glisser-Déposer tactile/souris avec SortableJS
+            if (sortableInstance) sortableInstance.destroy();
+            sortableInstance = new Sortable(optionsContainer, {
+                animation: 150,
+                ghostClass: 'bg-indigo-950/40'
+            });
+
+            document.getElementById('poll-list-view').classList.add('hidden');
+            document.getElementById('poll-vote-view').classList.remove('hidden');
+        }
+
+        function moveItem(btn, direction) {
+            const item = btn.closest('[data-id]');
+            const container = item.parentElement;
+            if (direction === 'up' && item.previousElementSibling) {
+                container.insertBefore(item, item.previousElementSibling);
+            } else if (direction === 'down' && item.nextElementSibling) {
+                container.insertBefore(item.nextElementSibling, item);
+            }
+        }
+
+        async function submitVote(event) {
+            event.preventDefault();
+            const rawNametag = document.getElementById('nametag-input').value;
+            // Normalisation : minuscules et suppression des espaces superflus
+            const nametag = rawNametag.trim().toLowerCase();
+
+            if (!nametag) {
+                alert("Entre un nametag valide.");
+                return;
+            }
+
+            const optionElements = document.querySelectorAll('#sortable-options [data-id]');
+            const ranking = Array.from(optionElements).map(el => el.getAttribute('data-id'));
+
+            // Simulation d'un hash IP unique basé sur une empreinte locale (en prod réelle, géré par Edge Function)
+            const ipHash = 'ip_hash_' + Math.random().toString(36).substring(7);
+
+            const { error } = await supabaseClient.from('votes').insert([{
+                poll_id: currentPollId,
+                nametag: nametag,
+                ip_hash: ipHash,
+                ranking: ranking
+            }]);
+
+            if (error) {
+                if (error.code === '23505') {
+                    alert("Erreur : Ce nametag a déjà voté pour ce sondage !");
+                } else {
+                    alert("Erreur lors de l'enregistrement du vote : " + error.message);
+                }
+                return;
+            }
+
+            alert("Vote enregistré avec succès !");
+            backToList();
+        }
+
+        async function openResultsView(pollId, pollTitle) {
+            document.getElementById('result-poll-title').textContent = pollTitle;
+            
+            const { data: options } = await supabaseClient.from('options').select('*').eq('poll_id', pollId);
+            const { data: votes } = await supabaseClient.from('votes').select('*').eq('poll_id', pollId);
+
+            const numOptions = options.length;
+            const scores = {};
+            options.forEach(opt => scores[opt.id] = { text: opt.text, points: 0 });
+
+            // Calcul de la méthode de Borda
+            // 1ère position = numOptions points, 2e = numOptions - 1, etc.
+            votes.forEach(vote => {
+                const ranking = vote.ranking;
+                ranking.forEach((optId, index) => {
+                    const points = numOptions - index;
+                    if (scores[optId]) {
+                        scores[optId].points += points;
+                    }
+                });
+            });
+
+            // Trier du plus grand score au plus petit
+            const sortedOptions = Object.values(scores).sort((a, b) => b.points - a.points);
+            const maxPoints = sortedOptions.length > 0 ? Math.max(...sortedOptions.map(o => o.points), 1) : 1;
+
+            const container = document.getElementById('results-container');
+            if (votes.length === 0) {
+                container.innerHTML = `<p class="text-slate-400 text-center py-6">Aucun vote enregistré pour l'instant.</p>`;
+            } else {
+                container.innerHTML = sortedOptions.map((opt, index) => {
+                    const percentage = Math.round((opt.points / maxPoints) * 100);
+                    return `
+                        <div class="bg-slate-900/60 border border-slate-700/60 p-4 rounded-xl">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-slate-200">#${index + 1}. ${escapeHtml(opt.text)}</span>
+                                <span class="text-indigo-400 font-semibold">${opt.points} pts</span>
+                            </div>
+                            <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                                <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('poll-list-view').classList.add('hidden');
+            document.getElementById('poll-results-view').classList.remove('hidden');
+        }
+
+        function backToList() {
+            document.getElementById('poll-vote-view').classList.add('hidden');
+            document.getElementById('poll-results-view').classList.add('hidden');
+            document.getElementById('poll-list-view').classList.remove('hidden');
+            loadPolls();
+        }
+
+        // --- Panel Admin ---
+        function toggleAdminModal() {
+            const modal = document.getElementById('admin-modal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden') && isAdminLoggedIn) {
+                loadAdminPolls();
+            }
+        }
+
+        function adminLogin() {
+            const pwd = document.getElementById('admin-pwd').value;
+            // Mot de passe admin basique modifiable ici
+            if (pwd === 'admin123') {
+                isAdminLoggedIn = true;
+                document.getElementById('admin-login-screen').classList.add('hidden');
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+                loadAdminPolls();
+            } else {
+                alert("Mot de passe incorrect.");
+            }
+        }
+
+        async function createPoll() {
+            const title = document.getElementById('new-poll-title').value.trim();
+            const description = document.getElementById('new-poll-desc').value.trim();
+            const optionsText = document.getElementById('new-poll-options').value.trim();
+
+            if (!title || !optionsText) {
+                alert("Le titre et au moins une proposition sont requis.");
+                return;
+            }
+
+            const optionsArray = optionsText.split('\n').map(o => o.trim()).filter(o => o.length > 0);
+
+            // Créer le sondage
+            const { data: pollData, error: pollError } = await supabaseClient
+                .from('polls')
+                .insert([{ title, description, is_open: true }])
+                .select()
+                .single();
+
+            if (pollError) {
+                alert("Erreur création sondage : " + pollError.message);
+                return;
+            }
+
+            // Insérer les propositions
+            const optionsToInsert = optionsArray.map(opt => ({
+                poll_id: pollData.id,
+                text: opt
+            }));
+
+            const { error: optError } = await supabaseClient.from('options').insert(optionsToInsert);
+
+            if (optError) {
+                alert("Erreur ajout propositions : " + optError.message);
+                return;
+            }
+
+            alert("Sondage créé avec succès !");
+            document.getElementById('new-poll-title').value = '';
+            document.getElementById('new-poll-desc').value = '';
+            document.getElementById('new-poll-options').value = '';
+            loadAdminPolls();
+            loadPolls();
+        }
+
+        async function loadAdminPolls() {
+            const container = document.getElementById('admin-polls-list');
+            const { data: polls } = await supabaseClient.from('polls').select('*').order('created_at', { ascending: false });
+
+            if (!polls || polls.length === 0) {
+                container.innerHTML = `<p class="text-slate-400 text-sm">Aucun sondage géré.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            for (const poll of polls) {
+                const { data: votes } = await supabaseClient.from('votes').select('*').eq('poll_id', poll.id);
+
+                const pollDiv = document.createElement('div');
+                pollDiv.className = 'bg-slate-900 border border-slate-700 p-4 rounded-xl space-y-3';
+                pollDiv.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h5 class="font-bold text-white">${escapeHtml(poll.title)}</h5>
+                            <span class="text-xs text-slate-400">${votes.length} vote(s) enregistré(s)</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="togglePollStatus('${poll.id}', ${!poll.is_open})" class="text-xs px-3 py-1.5 rounded-lg ${poll.is_open ? 'bg-amber-600 hover:bg-amber-500' : 'bg-emerald-600 hover:bg-emerald-500'} text-white font-medium transition">
+                                ${poll.is_open ? 'Fermer' : 'Ouvrir'}
+                            </button>
+                            <button onclick="deletePoll('${poll.id}')" class="text-xs bg-rose-600 hover:bg-rose-500 text-white font-medium px-3 py-1.5 rounded-lg transition">
+                                Supprimer
+                            </button>
+                        </div>
+                    </div>
+                    <div class="border-t border-slate-800 pt-2 text-xs text-slate-300">
+                        <p class="font-semibold text-slate-400 mb-1">Votes reçus :</p>
+                        ${votes.length === 0 ? '<p class="text-slate-500 italic">Aucun vote pour l\'instant</p>' : `
+                            <ul class="space-y-1">
+                                ${votes.map(v => `
+                                    <li class="flex justify-between items-center bg-slate-800/60 px-2.5 py-1 rounded">
+                                        <span>👤 <strong class="text-white">${escapeHtml(v.nametag)}</strong> <span class="text-slate-500">(${new Date(v.created_at).toLocaleString()})</span></span>
+                                        <button onclick="deleteVote('${v.id}')" class="text-rose-400 hover:text-rose-300 font-medium">Supprimer</button>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        `}
+                    </div>
+                `;
+                container.appendChild(pollDiv);
+            }
+        }
+
+        async function togglePollStatus(pollId, newStatus) {
+            await supabaseClient.from('polls').update({ is_open: newStatus }).eq('id', pollId);
+            loadAdminPolls();
+            loadPolls();
+        }
+
+        async function deletePoll(pollId) {
+            if (confirm("Supprimer définitivement ce sondage et tous ses votes ?")) {
+                await supabaseClient.from('polls').delete().eq('id', pollId);
+                loadAdminPolls();
+                loadPolls();
+            }
+        }
+
+        async function deleteVote(voteId) {
+            if (confirm("Supprimer ce vote ? Cela libérera le nametag et l'IP pour permettre un nouveau vote.")) {
+                await supabaseClient.from('votes').delete().eq('id', voteId);
+                loadAdminPolls();
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+    </script>
+</body>
+</html>
