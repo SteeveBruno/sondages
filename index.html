@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sondages Communautaires</title>
-    <!-- Tailwind CSS pour un design propre et moderne -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SortableJS pour le glisser-déposer tactile et souris -->
+    <!-- SortableJS pour le glisser-déposer -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <!-- Client Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -28,12 +28,11 @@
         <div id="poll-list-view">
             <h2 class="text-2xl font-bold mb-6 text-slate-200">Sondages disponibles</h2>
             <div id="polls-container" class="space-y-4">
-                <!-- Chargé dynamiquement -->
                 <p class="text-slate-400 text-center py-8">Chargement des sondages...</p>
             </div>
         </div>
 
-        <!-- Vue Vote / Détail du Sondage -->
+        <!-- Vue Vote -->
         <div id="poll-vote-view" class="hidden">
             <button onclick="backToList()" class="text-indigo-400 hover:underline mb-4 text-sm flex items-center gap-1">
                 ← Retour aux sondages
@@ -52,9 +51,7 @@
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-slate-300 mb-1">Classe tes préférences :</label>
                         <p class="text-xs text-slate-400 mb-3">Glisse les propositions (ou utilise les flèches) de la plus aimée (en haut) à la moins aimée (en bas).</p>
-                        <div id="sortable-options" class="space-y-2">
-                            <!-- Les propositions injectées ici -->
-                        </div>
+                        <div id="sortable-options" class="space-y-2"></div>
                     </div>
 
                     <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-lg transition shadow-lg">
@@ -76,9 +73,7 @@
                 </div>
                 <h3 id="result-poll-title" class="text-lg font-medium text-slate-300 mb-6"></h3>
                 
-                <div id="results-container" class="space-y-4">
-                    <!-- Graphiques de résultats injectés ici -->
-                </div>
+                <div id="results-container" class="space-y-4"></div>
             </div>
         </div>
 
@@ -93,7 +88,7 @@
             </div>
             
             <div class="p-6 overflow-y-auto flex-grow" id="admin-content">
-                <!-- Login Admin (si non connecté) -->
+                <!-- Login Admin -->
                 <div id="admin-login-screen">
                     <p class="text-slate-300 mb-4 text-sm">Entre le mot de passe administrateur :</p>
                     <input type="password" id="admin-pwd" placeholder="Mot de passe" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white mb-4 focus:outline-none focus:border-indigo-500">
@@ -102,9 +97,8 @@
                     </button>
                 </div>
 
-                <!-- Dashboard Admin (si connecté) -->
+                <!-- Dashboard Admin -->
                 <div id="admin-dashboard" class="hidden space-y-8">
-                    <!-- Créer un sondage -->
                     <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
                         <h4 class="font-bold text-md text-indigo-400 mb-3">Créer un nouveau sondage</h4>
                         <input type="text" id="new-poll-title" placeholder="Titre du sondage" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mb-3">
@@ -118,25 +112,20 @@
                         </button>
                     </div>
 
-                    <!-- Liste des sondages existants & Gestion -->
                     <div>
                         <h4 class="font-bold text-md text-indigo-400 mb-3">Gestion des sondages et des votes</h4>
-                        <div id="admin-polls-list" class="space-y-4">
-                            <!-- Injecté dynamiquement -->
-                        </div>
+                        <div id="admin-polls-list" class="space-y-4"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Script de logique de l'application -->
+    <!-- Script de logique -->
     <script>
-        // ==========================================
-        // CONFIGURATION SUPABASE (Colle tes clés ici)
-        // ==========================================
-        const SUPABASE_URL = 'COLLE_TON_PROJECT_URL_ICI';
-        const SUPABASE_ANON_KEY = 'COLLE_TA_CLE_ANON_ICI';
+        // Configuration Supabase intégrée
+        const SUPABASE_URL = 'https://brkkpzxibhggrjzswuxz.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_9fLIE35bCC2h2SO9d0GmLQ_HrVZM4eF';
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -144,7 +133,6 @@
         let sortableInstance = null;
         let isAdminLoggedIn = false;
 
-        // Charger les sondages au démarrage
         window.addEventListener('DOMContentLoaded', loadPolls);
 
         async function loadPolls() {
@@ -203,7 +191,6 @@
                 </div>
             `).join('');
 
-            // Activer le Glisser-Déposer tactile/souris avec SortableJS
             if (sortableInstance) sortableInstance.destroy();
             sortableInstance = new Sortable(optionsContainer, {
                 animation: 150,
@@ -227,7 +214,6 @@
         async function submitVote(event) {
             event.preventDefault();
             const rawNametag = document.getElementById('nametag-input').value;
-            // Normalisation : minuscules et suppression des espaces superflus
             const nametag = rawNametag.trim().toLowerCase();
 
             if (!nametag) {
@@ -237,8 +223,6 @@
 
             const optionElements = document.querySelectorAll('#sortable-options [data-id]');
             const ranking = Array.from(optionElements).map(el => el.getAttribute('data-id'));
-
-            // Simulation d'un hash IP unique basé sur une empreinte locale (en prod réelle, géré par Edge Function)
             const ipHash = 'ip_hash_' + Math.random().toString(36).substring(7);
 
             const { error } = await supabaseClient.from('votes').insert([{
@@ -271,19 +255,14 @@
             const scores = {};
             options.forEach(opt => scores[opt.id] = { text: opt.text, points: 0 });
 
-            // Calcul de la méthode de Borda
-            // 1ère position = numOptions points, 2e = numOptions - 1, etc.
             votes.forEach(vote => {
                 const ranking = vote.ranking;
                 ranking.forEach((optId, index) => {
                     const points = numOptions - index;
-                    if (scores[optId]) {
-                        scores[optId].points += points;
-                    }
+                    if (scores[optId]) scores[optId].points += points;
                 });
             });
 
-            // Trier du plus grand score au plus petit
             const sortedOptions = Object.values(scores).sort((a, b) => b.points - a.points);
             const maxPoints = sortedOptions.length > 0 ? Math.max(...sortedOptions.map(o => o.points), 1) : 1;
 
@@ -329,7 +308,6 @@
 
         function adminLogin() {
             const pwd = document.getElementById('admin-pwd').value;
-            // Mot de passe admin basique modifiable ici
             if (pwd === 'admin123') {
                 isAdminLoggedIn = true;
                 document.getElementById('admin-login-screen').classList.add('hidden');
@@ -352,7 +330,6 @@
 
             const optionsArray = optionsText.split('\n').map(o => o.trim()).filter(o => o.length > 0);
 
-            // Créer le sondage
             const { data: pollData, error: pollError } = await supabaseClient
                 .from('polls')
                 .insert([{ title, description, is_open: true }])
@@ -364,7 +341,6 @@
                 return;
             }
 
-            // Insérer les propositions
             const optionsToInsert = optionsArray.map(opt => ({
                 poll_id: pollData.id,
                 text: opt
@@ -448,7 +424,7 @@
         }
 
         async function deleteVote(voteId) {
-            if (confirm("Supprimer ce vote ? Cela libérera le nametag et l'IP pour permettre un nouveau vote.")) {
+            if (confirm("Supprimer ce vote ? Cela libérera le nametag et l'ip.")) {
                 await supabaseClient.from('votes').delete().eq('id', voteId);
                 loadAdminPolls();
             }
