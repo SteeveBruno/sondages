@@ -123,7 +123,6 @@
 
     <!-- Script de logique -->
     <script>
-        // Configuration Supabase intégrée
         const SUPABASE_URL = 'https://brkkpzxibhggrjzswuxz.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_9fLIE35bCC2h2SO9d0GmLQ_HrVZM4eF';
         
@@ -223,18 +222,23 @@
 
             const optionElements = document.querySelectorAll('#sortable-options [data-id]');
             const ranking = Array.from(optionElements).map(el => el.getAttribute('data-id'));
-            const ipHash = 'ip_hash_' + Math.random().toString(36).substring(7);
+            
+            let browserId = localStorage.getItem('soll_browser_id');
+            if (!browserId) {
+                browserId = 'browser_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+                localStorage.setItem('soll_browser_id', browserId);
+            }
 
             const { error } = await supabaseClient.from('votes').insert([{
                 poll_id: currentPollId,
                 nametag: nametag,
-                ip_hash: ipHash,
+                ip_hash: browserId,
                 ranking: ranking
             }]);
 
             if (error) {
-                if (error.code === '23505') {
-                    alert("Erreur : Ce nametag a déjà voté pour ce sondage !");
+                if (error.code === '23505' || error.message.includes('duplicate key') || error.message.includes('votes_poll_id_nametag_key')) {
+                    alert("⚠️ Ce nametag a déjà voté pour ce sondage ! Un seul vote par pseudonyme est autorisé.");
                 } else {
                     alert("Erreur lors de l'enregistrement du vote : " + error.message);
                 }
@@ -297,7 +301,6 @@
             loadPolls();
         }
 
-        // --- Panel Admin ---
         function toggleAdminModal() {
             const modal = document.getElementById('admin-modal');
             modal.classList.toggle('hidden');
@@ -397,7 +400,11 @@
                             <ul class="space-y-1">
                                 ${votes.map(v => `
                                     <li class="flex justify-between items-center bg-slate-800/60 px-2.5 py-1 rounded">
-                                        <span>👤 <strong class="text-white">${escapeHtml(v.nametag)}</strong> <span class="text-slate-500">(${new Date(v.created_at).toLocaleString()})</span></span>
+                                        <span>
+                                            👤 <strong class="text-white">${escapeHtml(v.nametag)}</strong> 
+                                            <span class="text-slate-500 text-[11px] ml-1">(${new Date(v.created_at).toLocaleString()})</span>
+                                            <span class="text-indigo-300 font-mono text-[11px] ml-2 bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-800/40">${escapeHtml(v.ip_hash || 'N/A')}</span>
+                                        </span>
                                         <button onclick="deleteVote('${v.id}')" class="text-rose-400 hover:text-rose-300 font-medium">Supprimer</button>
                                     </li>
                                 `).join('')}
@@ -424,7 +431,7 @@
         }
 
         async function deleteVote(voteId) {
-            if (confirm("Supprimer ce vote ? Cela libérera le nametag et l'ip.")) {
+            if (confirm("Supprimer ce vote ? Cela libérera le nametag.")) {
                 await supabaseClient.from('votes').delete().eq('id', voteId);
                 loadAdminPolls();
             }
