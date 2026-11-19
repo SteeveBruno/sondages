@@ -35,7 +35,7 @@
         <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-6">
             <!-- Logo + Titre -->
             <div class="flex items-center gap-5 sm:gap-6">
-                <button type="button" onclick="showView('polls')" title="Retour à l'accueil" class="group rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/70 transition transform hover:scale-105 cursor-pointer shrink-0">
+                <button type="button" onclick="showView('home')" title="Retour à l'accueil" class="group rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/70 transition transform hover:scale-105 cursor-pointer shrink-0">
                     <img src="logo.png" alt="Logo Les Orphelins de l'Arche"
                         onerror="this.classList.add('hidden'); document.getElementById('fallback-logo').classList.remove('hidden');"
                         class="w-36 h-36 sm:w-48 sm:h-48 rounded-full object-cover border-2 border-cyan-400/70 group-hover:border-cyan-300 shadow-2xl shadow-cyan-500/25">
@@ -51,7 +51,10 @@
 
             <!-- Menu de navigation -->
             <nav class="flex flex-wrap items-center gap-2.5 text-base sm:text-lg font-medium">
-                <button onclick="showView('polls')" class="px-5 py-3 rounded-xl text-cyan-300 hover:bg-cyan-950/60 border border-transparent hover:border-cyan-500/25 transition">
+                <button onclick="showView('home')" class="px-5 py-3 rounded-xl text-cyan-300 hover:bg-cyan-950/60 border border-transparent hover:border-cyan-500/25 transition">
+                    🏠 Accueil
+                </button>
+                <button onclick="showView('polls')" class="px-5 py-3 rounded-xl text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
                     🗳️ Sondages
                 </button>
                 <button onclick="showView('status')" class="px-5 py-3 rounded-xl text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
@@ -81,9 +84,77 @@
 
     <!-- Contenu Principal -->
     <main class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
+
+        <!-- Vue Accueil (Bienvenue) -->
+        <div id="home-view" class="space-y-8">
+            <div class="ark-card rounded-3xl p-6 sm:p-10 relative overflow-hidden">
+                <div class="flex flex-wrap items-center gap-2.5 mb-4">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-cyan-300 bg-cyan-950/80 border border-cyan-500/30 px-3 py-1 rounded-full">
+                        Cluster PvE Francophone • 18+
+                    </span>
+                    <span class="text-xs font-medium text-emerald-300 bg-emerald-950/70 border border-emerald-600/30 px-3 py-1 rounded-full">
+                        Crossplay PC & Consoles
+                    </span>
+                </div>
+
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-4 leading-tight">
+                    Bienvenue chez <span class="text-cyan-300">Les Orphelins de l'Arche</span>
+                </h2>
+
+                <p class="text-slate-300 text-base sm:text-lg leading-relaxed max-w-3xl mb-4">
+                    Une communauté québécoise et francophone conviviale dédiée à <strong>ARK: Survival Ascended</strong>, pensée pour profiter de l'aventure à son rythme dans une ambiance détendue, respectueuse et sans prise de tête.
+                </p>
+                <p class="text-slate-400 text-sm sm:text-base leading-relaxed max-w-3xl mb-8">
+                    Notre cluster réunit <strong>5 maps permanentes</strong> (<em>The Island, Ragnarok, Astraeos, Lost Colony, The Center</em>) ainsi que <strong>2 emplacements tournants</strong> qui changent chaque mois selon les envies de la communauté, avec des rates équilibrées et une sélection de mods QoL et de créatures soigneusement choisie.
+                </p>
+
+                <!-- Boutons d'action rapide -->
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="showView('polls')" class="bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-cyan-950/50">
+                        🗳️ Participer aux sondages
+                    </button>
+                    <button onclick="showView('status')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold px-6 py-3 rounded-xl transition">
+                        🖥️ Voir les serveurs en ligne
+                    </button>
+                    <button onclick="toggleRatesModal()" class="bg-slate-900/90 hover:bg-slate-800 border border-cyan-500/30 text-cyan-300 font-semibold px-6 py-3 rounded-xl transition">
+                        📊 Rates & Mods
+                    </button>
+                    <a href="https://discord.gg/t7D5MFngw" target="_blank" rel="noopener noreferrer" class="bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold px-6 py-3 rounded-xl transition">
+                        💬 Rejoindre le Discord
+                    </a>
+                </div>
+            </div>
+
+            <!-- Points clés du cluster -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="ark-card rounded-2xl p-6">
+                    <div class="text-2xl mb-2">🗺️</div>
+                    <h3 class="text-lg font-bold text-white mb-1.5">7 Maps en Cluster</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        5 mondes permanents pour bâtir durablement et 2 serveurs en rotation mensuelle pour explorer et varier les défis.
+                    </p>
+                </div>
+
+                <div class="ark-card rounded-2xl p-6">
+                    <div class="text-2xl mb-2">⚖️</div>
+                    <h3 class="text-lg font-bold text-white mb-1.5">Rates Équilibrées</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Level max 150 (Tek 180, Wyvern/Drake 190), Taming x10, Récolte x3, XP x1.5 et élevage accéléré (Maturation x50).
+                    </p>
+                </div>
+
+                <div class="ark-card rounded-2xl p-6">
+                    <div class="text-2xl mb-2">🤝</div>
+                    <h3 class="text-lg font-bold text-white mb-1.5">Décisions Communautaires</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Les joueurs votent directement ici pour les prochaines maps tournantes, les mods et les nouveautés du cluster.
+                    </p>
+                </div>
+            </div>
+        </div>
         
         <!-- Vue Liste des Sondages -->
-        <div id="poll-list-view" class="max-w-2xl mx-auto">
+        <div id="poll-list-view" class="hidden max-w-2xl mx-auto">
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-2xl font-bold text-white">Sondages disponibles</h2>
                 <span class="text-xs text-cyan-300/80 bg-cyan-950/60 border border-cyan-500/25 px-3 py-1 rounded-full">Cluster PVE • 18+</span>
@@ -326,6 +397,7 @@
         });
 
         function showView(viewName) {
+            document.getElementById('home-view').classList.add('hidden');
             document.getElementById('poll-list-view').classList.add('hidden');
             document.getElementById('poll-vote-view').classList.add('hidden');
             document.getElementById('poll-results-view').classList.add('hidden');
@@ -340,9 +412,11 @@
                 document.getElementById('server-status-view').classList.remove('hidden');
                 loadServerStatus();
                 statusRefreshInterval = setInterval(loadServerStatus, 30000);
-            } else {
+            } else if (viewName === 'polls') {
                 document.getElementById('poll-list-view').classList.remove('hidden');
                 loadPolls();
+            } else {
+                document.getElementById('home-view').classList.remove('hidden');
             }
         }
 
@@ -582,6 +656,7 @@
                 `;
             }
 
+            document.getElementById('home-view').classList.add('hidden');
             document.getElementById('poll-list-view').classList.add('hidden');
             document.getElementById('poll-vote-view').classList.remove('hidden');
         }
@@ -718,6 +793,7 @@
                 }).join('');
             }
 
+            document.getElementById('home-view').classList.add('hidden');
             document.getElementById('poll-list-view').classList.add('hidden');
             document.getElementById('poll-results-view').classList.remove('hidden');
         }
