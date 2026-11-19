@@ -3,31 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sondages Communautaires - Les Orphelins de l'Arche</title>
+    <title>Les Orphelins de l'Arche</title>
+    <link rel="icon" type="image/png" href="logo.png">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SortableJS pour le glisser-déposer -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <!-- Client Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            background-color: #070b12;
+            background-image:
+                radial-gradient(circle at 50% 0%, rgba(34, 211, 238, 0.12), transparent 55%),
+                linear-gradient(to bottom, #070b12, #0b111d);
+        }
+        .ark-card {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(56, 189, 248, 0.18);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+        .ark-card:hover {
+            border-color: rgba(34, 211, 238, 0.45);
+        }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+<body class="text-slate-100 min-h-screen flex flex-col">
 
-    <!-- En-tête -->
-    <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 flex justify-between items-center shadow-md">
-        <div class="flex items-center gap-3">
-            <h1 class="text-xl font-bold tracking-wide text-indigo-400">🗳️ Sondages - Les Orphelins de l'Arche</h1>
-        </div>
-        <div class="flex items-center gap-3">
-            <!-- Zone profil Discord connecté -->
-            <div id="user-profile-header" class="hidden flex items-center gap-2 bg-slate-900 px-3 py-1 rounded-full border border-slate-700">
-                <img id="header-avatar" src="" alt="Avatar" class="w-6 h-6 rounded-full">
-                <span id="header-username" class="text-xs font-medium text-slate-200"></span>
-                <button onclick="logoutDiscord()" class="text-[11px] text-rose-400 hover:text-rose-300 ml-1" title="Se déconnecter">✕</button>
+    <!-- En-tête & Navigation -->
+    <header class="bg-slate-950/90 backdrop-blur-md border-b border-cyan-500/20 py-3 px-4 sm:px-6 sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-3">
+            <!-- Logo + Titre -->
+            <div class="flex items-center gap-3">
+                <img src="logo.png" alt="Logo Les Orphelins de l'Arche"
+                    onerror="this.classList.add('hidden'); document.getElementById('fallback-logo').classList.remove('hidden');"
+                    class="w-11 h-11 rounded-full object-cover border border-cyan-400/50 shadow-md shadow-cyan-500/15">
+                <div id="fallback-logo" class="hidden w-11 h-11 rounded-full bg-cyan-950/80 border border-cyan-400/50 flex items-center justify-center text-cyan-300 font-bold text-lg">
+                    🏛️
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold tracking-wide text-cyan-300 leading-tight">Les Orphelins de l'Arche</h1>
+                    <p class="text-[11px] uppercase tracking-widest text-slate-400">ARK: Survival Ascended</p>
+                </div>
             </div>
-            <button id="adminToggleBtn" onclick="toggleAdminModal()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded transition font-medium">
-                🔒 Administration
-            </button>
+
+            <!-- Menu de navigation -->
+            <nav class="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium">
+                <button onclick="backToList()" class="px-3 py-1.5 rounded-lg text-cyan-300 hover:bg-cyan-950/60 border border-transparent hover:border-cyan-500/25 transition">
+                    🗳️ Sondages
+                </button>
+                <button onclick="toggleRatesModal()" class="px-3 py-1.5 rounded-lg text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
+                    📊 Rates du serveur
+                </button>
+                <!-- Remplace '#' ci-dessous par le lien d'invitation permanent de ton Discord -->
+                <a href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg text-[#7289da] hover:bg-[#5865F2]/15 border border-transparent hover:border-[#5865F2]/40 transition">
+                    💬 Discord
+                </a>
+            </nav>
+
+            <!-- Profil Discord + Admin -->
+            <div class="flex items-center gap-2.5">
+                <div id="user-profile-header" class="hidden flex items-center gap-2 bg-slate-900 px-3 py-1 rounded-full border border-cyan-500/25">
+                    <img id="header-avatar" src="" alt="Avatar" class="w-6 h-6 rounded-full">
+                    <span id="header-username" class="text-xs font-medium text-slate-200 max-w-[110px] truncate"></span>
+                    <button onclick="logoutDiscord()" class="text-[11px] text-rose-400 hover:text-rose-300 ml-1" title="Se déconnecter">✕</button>
+                </div>
+                <button id="adminToggleBtn" onclick="toggleAdminModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition font-medium">
+                    🔒 Admin
+                </button>
+            </div>
         </div>
     </header>
 
@@ -36,7 +80,10 @@
         
         <!-- Vue Liste des Sondages -->
         <div id="poll-list-view">
-            <h2 class="text-2xl font-bold mb-6 text-slate-200">Sondages disponibles</h2>
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-white">Sondages disponibles</h2>
+                <span class="text-xs text-cyan-300/80 bg-cyan-950/60 border border-cyan-500/25 px-3 py-1 rounded-full">Cluster PVE • 18+</span>
+            </div>
             <div id="polls-container" class="space-y-4">
                 <p class="text-slate-400 text-center py-8">Chargement des sondages...</p>
             </div>
@@ -44,16 +91,16 @@
 
         <!-- Vue Vote -->
         <div id="poll-vote-view" class="hidden">
-            <button onclick="backToList()" class="text-indigo-400 hover:underline mb-4 text-sm flex items-center gap-1">
+            <button onclick="backToList()" class="text-cyan-400 hover:underline mb-4 text-sm flex items-center gap-1">
                 ← Retour aux sondages
             </button>
-            <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
+            <div class="ark-card rounded-2xl p-6">
                 <h2 id="active-poll-title" class="text-2xl font-bold mb-2 text-white"></h2>
                 <p id="active-poll-desc" class="text-slate-400 text-sm mb-6"></p>
 
                 <!-- Écran de connexion Discord obligatoire pour voter -->
-                <div id="discord-login-prompt" class="bg-slate-900/80 border border-indigo-500/30 rounded-xl p-6 text-center space-y-4">
-                    <p class="text-slate-300 text-sm">Pour garantir l'équité des votes sur le serveur, connecte-toi avec ton compte Discord pour participer.</p>
+                <div id="discord-login-prompt" class="bg-slate-900/80 border border-cyan-500/25 rounded-xl p-6 text-center space-y-4">
+                    <p class="text-slate-300 text-sm">Connecte-toi avec ton compte Discord pour enregistrer ton vote de manière unique.</p>
                     <button type="button" onclick="loginWithDiscord()" class="inline-flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold px-6 py-3 rounded-lg transition shadow-lg">
                         <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028z"/></svg>
                         Se connecter avec Discord
@@ -62,7 +109,7 @@
 
                 <!-- Formulaire de vote (visible uniquement une fois connecté) -->
                 <form id="vote-form" onsubmit="submitVote(event)" class="hidden">
-                    <div class="mb-6 flex items-center justify-between bg-slate-900/70 border border-slate-700 rounded-lg px-4 py-3">
+                    <div class="mb-6 flex items-center justify-between bg-slate-900/80 border border-slate-700/80 rounded-lg px-4 py-3">
                         <div class="flex items-center gap-3">
                             <img id="form-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full">
                             <div>
@@ -70,13 +117,13 @@
                                 <p id="form-username" class="text-sm font-bold text-white"></p>
                             </div>
                         </div>
-                        <span class="text-xs bg-emerald-900/50 text-emerald-300 px-2.5 py-1 rounded border border-emerald-700/40">Compte vérifié</span>
+                        <span class="text-xs bg-emerald-950/80 text-emerald-300 px-2.5 py-1 rounded border border-emerald-700/40">Compte vérifié</span>
                     </div>
 
                     <!-- Conteneur dynamique selon le type de sondage -->
                     <div id="vote-options-container" class="mb-6"></div>
 
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-lg transition shadow-lg">
+                    <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold py-3 rounded-lg transition shadow-lg shadow-cyan-950/50">
                         Soumettre mon vote
                     </button>
                 </form>
@@ -85,13 +132,13 @@
 
         <!-- Vue Résultats -->
         <div id="poll-results-view" class="hidden">
-            <button onclick="backToList()" class="text-indigo-400 hover:underline mb-4 text-sm flex items-center gap-1">
+            <button onclick="backToList()" class="text-cyan-400 hover:underline mb-4 text-sm flex items-center gap-1">
                 ← Retour aux sondages
             </button>
-            <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
+            <div class="ark-card rounded-2xl p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-white">Résultats du sondage</h2>
-                    <span id="result-type-badge" class="text-xs bg-indigo-900 text-indigo-200 px-2.5 py-1 rounded-full font-medium"></span>
+                    <span id="result-type-badge" class="text-xs bg-cyan-950 text-cyan-200 border border-cyan-500/30 px-2.5 py-1 rounded-full font-medium"></span>
                 </div>
                 <h3 id="result-poll-title" class="text-lg font-medium text-slate-300 mb-6"></h3>
                 
@@ -101,10 +148,49 @@
 
     </main>
 
+    <!-- Modale Rates du Serveur -->
+    <div id="rates-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-cyan-500/30 rounded-2xl w-full max-w-xl max-h-[88vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+                <div class="flex items-center gap-2.5">
+                    <img src="logo.png" alt="Logo" class="w-7 h-7 rounded-full object-cover border border-cyan-400/40">
+                    <h3 class="font-bold text-lg text-cyan-300">Rates & Infos du Cluster</h3>
+                </div>
+                <button onclick="toggleRatesModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-5 text-sm">
+                <div class="grid grid-cols-2 gap-2.5 bg-slate-950/70 p-4 rounded-xl border border-slate-800">
+                    <div class="flex justify-between"><span class="text-slate-400">Dinos</span><span class="font-bold text-white">150</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Tek</span><span class="font-bold text-white">180</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Wyvern & Drake</span><span class="font-bold text-white">190</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Récolte</span><span class="font-bold text-cyan-300">x3</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">XP</span><span class="font-bold text-cyan-300">x1.5</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Reproduction</span><span class="font-bold text-cyan-300">x25</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Incubation</span><span class="font-bold text-cyan-300">x30</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Maturation</span><span class="font-bold text-cyan-300">x30</span></div>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-cyan-300 mb-2">Mods & Fonctionnalités actives</h4>
+                    <div class="flex flex-wrap gap-1.5 text-xs">
+                        <span class="bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-md text-slate-200">Custom Dino Levels</span>
+                        <span class="bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-md text-slate-200">Dino Color Tokens</span>
+                        <span class="bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-md text-slate-200">Pelayori's Cryo</span>
+                        <span class="bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-md text-slate-200">FPS Boost Buttons</span>
+                        <span class="bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-md text-slate-200">Auto Dino Wipes</span>
+                        <span class="bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-md text-slate-200">Super Spyglass Plus</span>
+                        <span class="bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-md text-slate-200">Lethal Quests</span>
+                        <span class="bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-md text-slate-200">Tribute & Element Transfer</span>
+                        <span class="bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-md text-slate-200">Cyber Structures</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modale Administration -->
-    <div id="admin-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-850">
+    <div id="admin-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-cyan-500/25 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-800 flex justify-between items-center">
                 <h3 class="font-bold text-lg text-white">Panneau d'Administration</h3>
                 <button onclick="toggleAdminModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
             </div>
@@ -113,22 +199,22 @@
                 <!-- Login Admin -->
                 <div id="admin-login-screen">
                     <p class="text-slate-300 mb-4 text-sm">Entre le mot de passe administrateur :</p>
-                    <input type="password" id="admin-pwd" placeholder="Mot de passe" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white mb-4 focus:outline-none focus:border-indigo-500">
-                    <button onclick="adminLogin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg transition">
+                    <input type="password" id="admin-pwd" placeholder="Mot de passe" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-white mb-4 focus:outline-none focus:border-cyan-500">
+                    <button onclick="adminLogin()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold py-2.5 rounded-lg transition">
                         Se connecter
                     </button>
                 </div>
 
                 <!-- Dashboard Admin -->
                 <div id="admin-dashboard" class="hidden space-y-8">
-                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
-                        <h4 class="font-bold text-md text-indigo-400 mb-3">Créer un nouveau sondage</h4>
+                    <div class="bg-slate-950/70 p-4 rounded-xl border border-slate-800">
+                        <h4 class="font-bold text-md text-cyan-400 mb-3">Créer un nouveau sondage</h4>
                         <input type="text" id="new-poll-title" placeholder="Titre du sondage" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mb-3">
                         <textarea id="new-poll-desc" placeholder="Description (optionnelle)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mb-3 resize-none h-20"></textarea>
                         
                         <div class="mb-3">
                             <label class="block text-xs font-medium text-slate-300 mb-1">Type de sondage :</label>
-                            <select id="new-poll-type" onchange="handlePollTypeChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                            <select id="new-poll-type" onchange="handlePollTypeChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500">
                                 <option value="priority">Sondage de priorité (Classement Borda)</option>
                                 <option value="single">Sondage à réponse unique (QCM)</option>
                                 <option value="open">Sondage à réponse libre (Écrire sa propre réponse)</option>
@@ -146,7 +232,7 @@
                     </div>
 
                     <div>
-                        <h4 class="font-bold text-md text-indigo-400 mb-3">Gestion des sondages et des votes</h4>
+                        <h4 class="font-bold text-md text-cyan-400 mb-3">Gestion des sondages et des votes</h4>
                         <div id="admin-polls-list" class="space-y-4"></div>
                     </div>
                 </div>
@@ -172,6 +258,10 @@
             loadPolls();
         });
 
+        function toggleRatesModal() {
+            document.getElementById('rates-modal').classList.toggle('hidden');
+        }
+
         // --- Gestion Authentification Discord ---
         async function checkDiscordSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
@@ -179,6 +269,7 @@
 
             supabaseClient.auth.onAuthStateChange((_event, session) => {
                 updateAuthUI(session?.user || null);
+                loadPolls();
             });
         }
 
@@ -221,6 +312,7 @@
         async function logoutDiscord() {
             await supabaseClient.auth.signOut();
             updateAuthUI(null);
+            loadPolls();
         }
 
         // --- Gestion des Sondages ---
@@ -241,26 +333,35 @@
                 return;
             }
 
+            const { data: allVotes } = await supabaseClient.from('votes').select('poll_id, ip_hash');
+            const currentDiscordTag = currentDiscordUser ? 'discord_' + currentDiscordUser.id : null;
+
             container.innerHTML = data.map(poll => {
                 let typeLabel = 'Priorité (Borda)';
                 if (poll.poll_type === 'single') typeLabel = 'Réponse unique';
                 if (poll.poll_type === 'open') typeLabel = 'Réponse libre';
 
+                const pollVotes = (allVotes || []).filter(v => v.poll_id === poll.id);
+                const voteCount = pollVotes.length;
+                const hasVoted = currentDiscordTag ? pollVotes.some(v => v.ip_hash === currentDiscordTag) : false;
+
                 return `
-                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 flex justify-between items-center shadow-lg hover:border-indigo-500/50 transition">
+                    <div class="ark-card rounded-2xl p-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 transition">
                         <div>
-                            <div class="flex items-center gap-2 mb-1">
+                            <div class="flex flex-wrap items-center gap-2 mb-1.5">
                                 <h3 class="font-bold text-lg text-white">${escapeHtml(poll.title)}</h3>
-                                <span class="text-xs px-2 py-0.5 rounded-full ${poll.is_open ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50' : 'bg-rose-900/60 text-rose-300 border border-rose-700/50'}">
+                                <span class="text-xs px-2 py-0.5 rounded-full ${poll.is_open ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/50' : 'bg-rose-950/80 text-rose-300 border border-rose-700/50'}">
                                     ${poll.is_open ? 'Actif' : 'Fermé'}
                                 </span>
-                                <span class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">${typeLabel}</span>
+                                <span class="text-xs bg-slate-800/90 text-slate-300 px-2 py-0.5 rounded border border-slate-700">${typeLabel}</span>
+                                ${hasVoted ? '<span class="text-xs bg-cyan-950/90 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/30">✓ Déjà voté</span>' : ''}
                             </div>
-                            <p class="text-slate-400 text-sm line-clamp-1">${escapeHtml(poll.description || '')}</p>
+                            <p class="text-slate-400 text-sm line-clamp-1 mb-1">${escapeHtml(poll.description || '')}</p>
+                            <p class="text-xs text-slate-500">${voteCount} participation${voteCount > 1 ? 's' : ''}</p>
                         </div>
-                        <div class="flex gap-2">
-                            ${poll.is_open ? `<button onclick="openVoteView('${poll.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition">Voter</button>` : ''}
-                            <button onclick="openResultsView('${poll.id}', '${escapeHtml(poll.title).replace(/'/g, "\\'")}', '${poll.poll_type || 'priority'}')" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition">Résultats</button>
+                        <div class="flex gap-2 shrink-0">
+                            ${poll.is_open ? `<button onclick="openVoteView('${poll.id}')" class="bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-sm font-bold px-4 py-2 rounded-lg transition">Voter</button>` : ''}
+                            <button onclick="openResultsView('${poll.id}', '${escapeHtml(poll.title).replace(/'/g, "\\'")}', '${poll.poll_type || 'priority'}')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">Résultats</button>
                         </div>
                     </div>
                 `;
@@ -287,7 +388,7 @@
                 `;
                 const sortableContainer = document.getElementById('sortable-options');
                 sortableContainer.innerHTML = options.map(opt => `
-                    <div data-id="${opt.id}" class="bg-slate-900 border border-slate-700 p-3.5 rounded-lg flex items-center justify-between cursor-grab active:cursor-grabbing shadow hover:border-indigo-500 transition">
+                    <div data-id="${opt.id}" class="bg-slate-900 border border-slate-700 p-3.5 rounded-lg flex items-center justify-between cursor-grab active:cursor-grabbing shadow hover:border-cyan-500 transition">
                         <span class="font-medium text-slate-200 text-sm">${escapeHtml(opt.text)}</span>
                         <div class="flex items-center gap-1">
                             <button type="button" onclick="moveItem(this, 'up')" class="p-1 text-slate-400 hover:text-white md:hidden">▲</button>
@@ -300,7 +401,7 @@
                 if (sortableInstance) sortableInstance.destroy();
                 sortableInstance = new Sortable(sortableContainer, {
                     animation: 150,
-                    ghostClass: 'bg-indigo-950/40'
+                    ghostClass: 'bg-cyan-950/40'
                 });
 
             } else if (currentPollType === 'single') {
@@ -308,8 +409,8 @@
                     <label class="block text-sm font-medium text-slate-300 mb-3">Choisis une seule option :</label>
                     <div class="space-y-2">
                         ${options.map(opt => `
-                            <label class="flex items-center gap-3 bg-slate-900 border border-slate-700 p-3.5 rounded-lg cursor-pointer hover:border-indigo-500 transition">
-                                <input type="radio" name="single-option" value="${opt.id}" required class="w-4 h-4 text-indigo-600 bg-slate-800 border-slate-700 focus:ring-indigo-500">
+                            <label class="flex items-center gap-3 bg-slate-900 border border-slate-700 p-3.5 rounded-lg cursor-pointer hover:border-cyan-500 transition">
+                                <input type="radio" name="single-option" value="${opt.id}" required class="w-4 h-4 text-cyan-500 bg-slate-800 border-slate-700 focus:ring-cyan-500">
                                 <span class="text-slate-200 text-sm font-medium">${escapeHtml(opt.text)}</span>
                             </label>
                         `).join('')}
@@ -320,7 +421,7 @@
                 container.innerHTML = `
                     <label class="block text-sm font-medium text-slate-300 mb-2">Écris ta réponse :</label>
                     <input type="text" id="open-answer-input" required placeholder="Ta réponse..." 
-                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500">
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500">
                 `;
             }
 
@@ -436,6 +537,8 @@
             const sortedOptions = Object.values(scores).sort((a, b) => b.points - a.points);
             const maxPoints = sortedOptions.length > 0 ? Math.max(...sortedOptions.map(o => o.points), 1) : 1;
 
+            const medals = ['🥇', '🥈', '🥉'];
+
             const container = document.getElementById('results-container');
             if (votes.length === 0) {
                 container.innerHTML = `<p class="text-slate-400 text-center py-6">Aucun vote enregistré pour l'instant.</p>`;
@@ -443,14 +546,15 @@
                 container.innerHTML = sortedOptions.map((opt, index) => {
                     const percentage = Math.round((opt.points / maxPoints) * 100);
                     const scoreLabel = pollType === 'priority' ? `${opt.points} pts` : `${opt.points} vote(s)`;
+                    const rankDisplay = medals[index] ? `${medals[index]} #${index + 1}` : `#${index + 1}`;
                     return `
-                        <div class="bg-slate-900/60 border border-slate-700/60 p-4 rounded-xl">
+                        <div class="bg-slate-900/70 border border-slate-700/70 p-4 rounded-xl">
                             <div class="flex justify-between items-center mb-2">
-                                <span class="font-bold text-slate-200">#${index + 1}. ${escapeHtml(opt.text)}</span>
-                                <span class="text-indigo-400 font-semibold">${scoreLabel}</span>
+                                <span class="font-bold text-slate-200">${rankDisplay}. ${escapeHtml(opt.text)}</span>
+                                <span class="text-cyan-400 font-semibold">${scoreLabel}</span>
                             </div>
                             <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
-                                <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                                <div class="bg-cyan-500 h-2.5 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
                             </div>
                         </div>
                     `;
@@ -478,7 +582,7 @@
 
         function adminLogin() {
             const pwd = document.getElementById('admin-pwd').value;
-            if (pwd === 'Orphelins2026') { // Remplace 'admin123' par ton mot de passe secret
+            if (pwd === 'Orphelins2026') {
                 isAdminLoggedIn = true;
                 document.getElementById('admin-login-screen').classList.add('hidden');
                 document.getElementById('admin-dashboard').classList.remove('hidden');
@@ -593,7 +697,7 @@
                                         <span>
                                             👤 <strong class="text-white">${escapeHtml(v.nametag)}</strong> 
                                             <span class="text-slate-500 text-[11px] ml-1">(${new Date(v.created_at).toLocaleString()})</span>
-                                            <span class="text-indigo-300 font-mono text-[11px] ml-2 bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-800/40">${escapeHtml(v.ip_hash || 'N/A')}</span>
+                                            <span class="text-cyan-300 font-mono text-[11px] ml-2 bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40">${escapeHtml(v.ip_hash || 'N/A')}</span>
                                         </span>
                                         <button onclick="deleteVote('${v.id}')" class="text-rose-400 hover:text-rose-300 font-medium">Supprimer</button>
                                     </li>
