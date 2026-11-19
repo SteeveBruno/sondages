@@ -60,6 +60,9 @@
                 <button onclick="showView('status')" class="px-5 py-3 rounded-xl text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
                     🖥️ Statut des serveurs
                 </button>
+                <button onclick="showView('rules')" class="px-5 py-3 rounded-xl text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
+                    📜 Règlements
+                </button>
                 <button onclick="toggleRatesModal()" class="px-5 py-3 rounded-xl text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
                     📊 Rates du cluster
                 </button>
@@ -104,25 +107,9 @@
                 <p class="text-slate-300 text-base sm:text-lg leading-relaxed max-w-3xl mb-4">
                     Une communauté québécoise et francophone conviviale dédiée à <strong>ARK: Survival Ascended</strong>, pensée pour profiter de l'aventure à son rythme dans une ambiance détendue, respectueuse et sans prise de tête.
                 </p>
-                <p class="text-slate-400 text-sm sm:text-base leading-relaxed max-w-3xl mb-8">
+                <p class="text-slate-400 text-sm sm:text-base leading-relaxed max-w-3xl">
                     Notre cluster réunit <strong>5 maps permanentes</strong> (<em>The Island, Ragnarok, Astraeos, Lost Colony, The Center</em>) ainsi que <strong>2 emplacements tournants</strong> qui changent chaque mois selon les envies de la communauté, avec des rates équilibrées et une sélection de mods QoL et de créatures soigneusement choisie.
                 </p>
-
-                <!-- Boutons d'action rapide -->
-                <div class="flex flex-wrap gap-3">
-                    <button onclick="showView('polls')" class="bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-cyan-950/50">
-                        🗳️ Participer aux sondages
-                    </button>
-                    <button onclick="showView('status')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold px-6 py-3 rounded-xl transition">
-                        🖥️ Voir les serveurs en ligne
-                    </button>
-                    <button onclick="toggleRatesModal()" class="bg-slate-900/90 hover:bg-slate-800 border border-cyan-500/30 text-cyan-300 font-semibold px-6 py-3 rounded-xl transition">
-                        📊 Rates & Mods
-                    </button>
-                    <a href="https://discord.gg/t7D5MFngw" target="_blank" rel="noopener noreferrer" class="bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold px-6 py-3 rounded-xl transition">
-                        💬 Rejoindre le Discord
-                    </a>
-                </div>
             </div>
 
             <!-- Points clés du cluster -->
@@ -150,6 +137,67 @@
                         Les joueurs votent directement ici pour les prochaines maps tournantes, les mods et les nouveautés du cluster.
                     </p>
                 </div>
+            </div>
+        </div>
+
+        <!-- Vue Règlements -->
+        <div id="rules-view" class="hidden space-y-6">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white">Règlements du cluster</h2>
+                    <p class="text-xs sm:text-sm text-slate-400 mt-1">À lire et respecter en tout temps sur les serveurs et sur Discord</p>
+                </div>
+                <span class="text-xs text-cyan-300/80 bg-cyan-950/60 border border-cyan-500/25 px-3 py-1 rounded-full">
+                    Cluster PvE • 18+
+                </span>
+            </div>
+
+            <!-- Section 1 : Accès et comportement -->
+            <div class="ark-card rounded-2xl p-6 space-y-4">
+                <h3 class="text-xl font-bold text-cyan-300">🛡️ Accès et comportement</h3>
+                <ul class="space-y-3 text-sm sm:text-base text-slate-300 leading-relaxed list-disc pl-5">
+                    <li>
+                        <strong class="text-white">Profil et intégration :</strong> Serveur réservé aux 18 ans et plus, francophone uniquement. Le Discord est obligatoire (canal principal d'information), une rencontre vocale est exigée pour faire connaissance, et votre personnage en jeu doit porter le même identifiant que votre compte Discord.
+                    </li>
+                    <li>
+                        <strong class="text-white">Respect et fair-play :</strong> Respect mutuel obligatoire. Aucune tolérance pour le harcèlement, les insultes, le racisme, la toxicité ou tout type de vol (œufs, ressources ou autres objets). L'administration applique les sanctions nécessaires si un conflit n'est pas réglé.
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Section 2 : Construction et territoires -->
+            <div class="ark-card rounded-2xl p-6 space-y-4">
+                <h3 class="text-xl font-bold text-cyan-300">🏗️ Construction et territoires</h3>
+                <ul class="space-y-3 text-sm sm:text-base text-slate-300 leading-relaxed list-disc pl-5">
+                    <li>
+                        <strong class="text-white">Zones interdites :</strong> Interdiction de bloquer les grottes importantes, les artéfacts, les passages obligatoires, les spawns de ressources rares et les obélisques.
+                    </li>
+                    <li>
+                        <strong class="text-white">Distances et bases :</strong> Maintenir au moins 500 mètres entre les bases. Chaque tribu a droit à une base principale uniquement sur Astraeos, The Island ou Ragnarok, et à un avant-poste au strict minimum sur les autres cartes pour y atterrir.
+                    </li>
+                    <li>
+                        <strong class="text-white">Limites de structures :</strong> Maximum de 3 000 structures (tout inclus) pour une base principale et 250 structures (tout inclus) pour un avant-poste.
+                    </li>
+                    <li>
+                        <strong class="text-white">Déclaration et propreté :</strong> Publier les coordonnées/infos de votre base dans le salon Discord <code class="text-cyan-300 bg-slate-950/90 px-1.5 py-0.5 rounded border border-slate-700/80">🏰emplacement-de-votre-base🏰</code>. Retirer vos pièges après usage et ne laisser aucune construction hors du périmètre de votre base.
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Section 3 : Créatures et timers -->
+            <div class="ark-card rounded-2xl p-6 space-y-4">
+                <h3 class="text-xl font-bold text-cyan-300">🦖 Créatures et timers</h3>
+                <ul class="space-y-3 text-sm sm:text-base text-slate-300 leading-relaxed list-disc pl-5">
+                    <li>
+                        <strong class="text-white">Dinos hors connexion :</strong> Maximum de 25 créatures sorties à votre base lorsque vous êtes déconnecté. Utiliser le CS propagateur (niveau 111) pour les grosses reproductions.
+                    </li>
+                    <li>
+                        <strong class="text-white">Dons et échanges :</strong> Interdiction de donner des dinos/créatures à d'autres tribus, ainsi que de donner, vendre ou échanger des créatures mutées ou issues du <code class="text-cyan-300 bg-slate-950/90 px-1.5 py-0.5 rounded border border-slate-700/80">🦖shop-dinos-personnalisés🦖</code>. <strong class="text-amber-300">LA VENTE DE CES DERNIERS N'EST PERMISE QU'AVEC DES DINOS CASTRÉS.</strong>
+                    </li>
+                    <li>
+                        <strong class="text-white">Timers et inactivité :</strong> Les structures et créatures ont des timers. À zéro, elles deviennent vulnérables aux attaques/pertes ou à un wipe administratif si la base paraît abandonnée. Il revient aux joueurs de se connecter régulièrement pour réinitialiser leurs timers ; le serveur ne couvre pas la négligence.
+                    </li>
+                </ul>
             </div>
         </div>
         
@@ -398,6 +446,7 @@
 
         function showView(viewName) {
             document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('rules-view').classList.add('hidden');
             document.getElementById('poll-list-view').classList.add('hidden');
             document.getElementById('poll-vote-view').classList.add('hidden');
             document.getElementById('poll-results-view').classList.add('hidden');
@@ -412,6 +461,8 @@
                 document.getElementById('server-status-view').classList.remove('hidden');
                 loadServerStatus();
                 statusRefreshInterval = setInterval(loadServerStatus, 30000);
+            } else if (viewName === 'rules') {
+                document.getElementById('rules-view').classList.remove('hidden');
             } else if (viewName === 'polls') {
                 document.getElementById('poll-list-view').classList.remove('hidden');
                 loadPolls();
@@ -657,6 +708,7 @@
             }
 
             document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('rules-view').classList.add('hidden');
             document.getElementById('poll-list-view').classList.add('hidden');
             document.getElementById('poll-vote-view').classList.remove('hidden');
         }
@@ -794,6 +846,7 @@
             }
 
             document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('rules-view').classList.add('hidden');
             document.getElementById('poll-list-view').classList.add('hidden');
             document.getElementById('poll-results-view').classList.remove('hidden');
         }
