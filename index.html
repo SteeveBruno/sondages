@@ -31,31 +31,31 @@
 <body class="text-slate-100 min-h-screen flex flex-col">
 
     <!-- En-tête & Navigation -->
-    <header class="bg-slate-950/90 backdrop-blur-md border-b border-cyan-500/20 py-3 px-4 sm:px-6 sticky top-0 z-40">
-        <div class="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-3">
+    <header class="bg-slate-950/90 backdrop-blur-md border-b border-cyan-500/20 py-4 px-4 sm:px-6 sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-4">
             <!-- Logo + Titre -->
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-4">
                 <img src="logo.png" alt="Logo Les Orphelins de l'Arche"
                     onerror="this.classList.add('hidden'); document.getElementById('fallback-logo').classList.remove('hidden');"
-                    class="w-11 h-11 rounded-full object-cover border border-cyan-400/50 shadow-md shadow-cyan-500/15">
-                <div id="fallback-logo" class="hidden w-11 h-11 rounded-full bg-cyan-950/80 border border-cyan-400/50 flex items-center justify-center text-cyan-300 font-bold text-lg">
+                    class="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-cyan-400/60 shadow-lg shadow-cyan-500/20">
+                <div id="fallback-logo" class="hidden w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-cyan-950/80 border-2 border-cyan-400/60 flex items-center justify-center text-cyan-300 font-bold text-2xl">
                     🏛️
                 </div>
                 <div>
-                    <h1 class="text-base sm:text-lg font-bold tracking-wide text-cyan-300 leading-tight">Les Orphelins de l'Arche</h1>
-                    <p class="text-[11px] uppercase tracking-widest text-slate-400">ARK: Survival Ascended</p>
+                    <h1 class="text-lg sm:text-xl font-bold tracking-wide text-cyan-300 leading-tight">Les Orphelins de l'Arche</h1>
+                    <p class="text-xs uppercase tracking-widest text-slate-400">ARK: Survival Ascended</p>
                 </div>
             </div>
 
             <!-- Menu de navigation -->
-            <nav class="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium">
-                <button onclick="backToList()" class="px-3 py-1.5 rounded-lg text-cyan-300 hover:bg-cyan-950/60 border border-transparent hover:border-cyan-500/25 transition">
+            <nav class="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium">
+                <button onclick="backToList()" class="px-3.5 py-2 rounded-lg text-cyan-300 hover:bg-cyan-950/60 border border-transparent hover:border-cyan-500/25 transition">
                     🗳️ Sondages
                 </button>
-                <button onclick="toggleRatesModal()" class="px-3 py-1.5 rounded-lg text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
+                <button onclick="toggleRatesModal()" class="px-3.5 py-2 rounded-lg text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
                     📊 Rates du serveur
                 </button>
-                <a href="https://discord.gg/t7D5MFngw" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg text-[#7289da] hover:bg-[#5865F2]/15 border border-transparent hover:border-[#5865F2]/40 transition">
+                <a href="https://discord.gg/t7D5MFngw" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-lg text-[#7289da] hover:bg-[#5865F2]/15 border border-transparent hover:border-[#5865F2]/40 transition">
                     💬 Discord
                 </a>
             </nav>
@@ -67,7 +67,7 @@
                     <span id="header-username" class="text-xs font-medium text-slate-200 max-w-[110px] truncate"></span>
                     <button onclick="logoutDiscord()" class="text-[11px] text-rose-400 hover:text-rose-300 ml-1" title="Se déconnecter">✕</button>
                 </div>
-                <button id="adminToggleBtn" onclick="toggleAdminModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition font-medium">
+                <button id="adminToggleBtn" onclick="toggleAdminModal()" class="text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 rounded-lg transition font-medium">
                     🔒 Admin
                 </button>
             </div>
@@ -152,7 +152,7 @@
         <div class="bg-slate-900 border border-cyan-500/30 rounded-2xl w-full max-w-xl max-h-[88vh] flex flex-col shadow-2xl overflow-hidden">
             <div class="p-4 border-b border-slate-800 flex justify-between items-center">
                 <div class="flex items-center gap-2.5">
-                    <img src="logo.png" alt="Logo" class="w-7 h-7 rounded-full object-cover border border-cyan-400/40">
+                    <img src="logo.png" alt="Logo" class="w-8 h-8 rounded-full object-cover border border-cyan-400/40">
                     <h3 class="font-bold text-lg text-cyan-300">Rates & Infos du Cluster</h3>
                 </div>
                 <button onclick="toggleRatesModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
