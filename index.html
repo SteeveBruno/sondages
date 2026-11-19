@@ -49,8 +49,11 @@
 
             <!-- Menu de navigation -->
             <nav class="flex flex-wrap items-center gap-2.5 text-base sm:text-lg font-medium">
-                <button onclick="backToList()" class="px-5 py-3 rounded-xl text-cyan-300 hover:bg-cyan-950/60 border border-transparent hover:border-cyan-500/25 transition">
+                <button onclick="showView('polls')" class="px-5 py-3 rounded-xl text-cyan-300 hover:bg-cyan-950/60 border border-transparent hover:border-cyan-500/25 transition">
                     🗳️ Sondages
+                </button>
+                <button onclick="showView('status')" class="px-5 py-3 rounded-xl text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
+                    🖥️ Statut des serveurs
                 </button>
                 <button onclick="toggleRatesModal()" class="px-5 py-3 rounded-xl text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
                     📊 Rates du cluster
@@ -75,10 +78,10 @@
     </header>
 
     <!-- Contenu Principal -->
-    <main class="flex-grow container mx-auto px-4 py-8 max-w-2xl">
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
         
         <!-- Vue Liste des Sondages -->
-        <div id="poll-list-view">
+        <div id="poll-list-view" class="max-w-2xl mx-auto">
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-2xl font-bold text-white">Sondages disponibles</h2>
                 <span class="text-xs text-cyan-300/80 bg-cyan-950/60 border border-cyan-500/25 px-3 py-1 rounded-full">Cluster PVE • 18+</span>
@@ -89,7 +92,7 @@
         </div>
 
         <!-- Vue Vote -->
-        <div id="poll-vote-view" class="hidden">
+        <div id="poll-vote-view" class="hidden max-w-2xl mx-auto">
             <button onclick="backToList()" class="text-cyan-400 hover:underline mb-4 text-sm flex items-center gap-1">
                 ← Retour aux sondages
             </button>
@@ -130,7 +133,7 @@
         </div>
 
         <!-- Vue Résultats -->
-        <div id="poll-results-view" class="hidden">
+        <div id="poll-results-view" class="hidden max-w-2xl mx-auto">
             <button onclick="backToList()" class="text-cyan-400 hover:underline mb-4 text-sm flex items-center gap-1">
                 ← Retour aux sondages
             </button>
@@ -142,6 +145,28 @@
                 <h3 id="result-poll-title" class="text-lg font-medium text-slate-300 mb-6"></h3>
                 
                 <div id="results-container" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- Vue Statut des Serveurs -->
+        <div id="server-status-view" class="hidden">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Statut des serveurs du cluster</h2>
+                    <p class="text-xs text-slate-400 mt-1">Maps permanentes et emplacements tournants (changement mensuel) • Actualisation auto toutes les 30 s</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="total-players-badge" class="text-xs bg-cyan-950/80 text-cyan-200 border border-cyan-500/30 px-3 py-1.5 rounded-full font-medium">
+                        👥 0 joueur en ligne
+                    </span>
+                    <button onclick="loadServerStatus()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3.5 py-1.5 rounded-lg transition">
+                        🔄 Actualiser
+                    </button>
+                </div>
+            </div>
+
+            <div id="server-status-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <p class="text-slate-400 col-span-full text-center py-8">Chargement de l'état des serveurs...</p>
             </div>
         </div>
 
@@ -276,16 +301,117 @@
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        const FALLBACK_SERVERS = [
+            { slot_id: 'slot-1', slot_label: 'Serveur #1', map_name: 'The Island', is_rotating: false, is_online: false, players_online: 0, max_players: 20, players_list: [] },
+            { slot_id: 'slot-2', slot_label: 'Serveur #2', map_name: 'Ragnarok', is_rotating: false, is_online: false, players_online: 0, max_players: 20, players_list: [] },
+            { slot_id: 'slot-3', slot_label: 'Serveur #3', map_name: 'Astraeos', is_rotating: false, is_online: false, players_online: 0, max_players: 20, players_list: [] },
+            { slot_id: 'slot-4', slot_label: 'Serveur #4', map_name: 'Lost Colony', is_rotating: false, is_online: false, players_online: 0, max_players: 20, players_list: [] },
+            { slot_id: 'slot-5', slot_label: 'Serveur #5', map_name: 'The Center', is_rotating: false, is_online: false, players_online: 0, max_players: 20, players_list: [] },
+            { slot_id: 'rot-1', slot_label: 'Slot Tournant #1', map_name: 'Extinction', is_rotating: true, is_online: false, players_online: 0, max_players: 20, players_list: [] },
+            { slot_id: 'rot-2', slot_label: 'Slot Tournant #2', map_name: 'Scorched Earth', is_rotating: true, is_online: false, players_online: 0, max_players: 20, players_list: [] }
+        ];
+
         let currentPollId = null;
         let currentPollType = 'priority';
         let sortableInstance = null;
         let isAdminLoggedIn = false;
         let currentDiscordUser = null;
+        let statusRefreshInterval = null;
 
         window.addEventListener('DOMContentLoaded', async () => {
             await checkDiscordSession();
             loadPolls();
         });
+
+        function showView(viewName) {
+            document.getElementById('poll-list-view').classList.add('hidden');
+            document.getElementById('poll-vote-view').classList.add('hidden');
+            document.getElementById('poll-results-view').classList.add('hidden');
+            document.getElementById('server-status-view').classList.add('hidden');
+
+            if (statusRefreshInterval) {
+                clearInterval(statusRefreshInterval);
+                statusRefreshInterval = null;
+            }
+
+            if (viewName === 'status') {
+                document.getElementById('server-status-view').classList.remove('hidden');
+                loadServerStatus();
+                statusRefreshInterval = setInterval(loadServerStatus, 30000);
+            } else {
+                document.getElementById('poll-list-view').classList.remove('hidden');
+                loadPolls();
+            }
+        }
+
+        async function loadServerStatus() {
+            const grid = document.getElementById('server-status-grid');
+            const totalBadge = document.getElementById('total-players-badge');
+
+            const { data, error } = await supabaseClient
+                .from('server_status')
+                .select('*')
+                .order('slot_id', { ascending: true });
+
+            const servers = (!error && data && data.length > 0) ? data : FALLBACK_SERVERS;
+
+            const totalOnlinePlayers = servers
+                .filter(s => s.is_online)
+                .reduce((sum, s) => sum + (Number(s.players_online) || 0), 0);
+
+            totalBadge.textContent = `👥 ${totalOnlinePlayers} joueur${totalOnlinePlayers > 1 ? 's' : ''} en ligne`;
+
+            grid.innerHTML = servers.map(srv => {
+                const online = Boolean(srv.is_online);
+                const count = Number(srv.players_online) || 0;
+                const max = Number(srv.max_players) || 20;
+                const players = Array.isArray(srv.players_list) ? srv.players_list : [];
+                const syncLabel = srv.updated_at
+                    ? `MAJ : ${new Date(srv.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                    : 'En attente du bot';
+
+                return `
+                    <div class="ark-card rounded-2xl p-5 flex flex-col justify-between gap-4 transition">
+                        <div>
+                            <div class="flex items-start justify-between gap-2 mb-3">
+                                <div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="text-xs uppercase tracking-wider text-slate-400">${escapeHtml(srv.slot_label || '')}</span>
+                                        ${srv.is_rotating ? '<span class="text-[11px] bg-amber-950/80 text-amber-300 border border-amber-600/40 px-2 py-0.5 rounded-full">↻ Rotative / mois</span>' : ''}
+                                    </div>
+                                    <h3 class="text-xl font-bold text-white mt-0.5">${escapeHtml(srv.map_name)}</h3>
+                                </div>
+                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${online ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-600/40' : 'bg-rose-950/90 text-rose-300 border border-rose-600/40'}">
+                                    <span class="w-2 h-2 rounded-full ${online ? 'bg-emerald-400' : 'bg-rose-400'}"></span>
+                                    ${online ? 'En ligne' : 'Hors ligne'}
+                                </span>
+                            </div>
+
+                            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 mb-3 flex items-center justify-between">
+                                <span class="text-xs text-slate-400">Joueurs connectés</span>
+                                <span class="text-sm font-bold ${online ? 'text-cyan-300' : 'text-slate-500'}">${count} / ${max}</span>
+                            </div>
+
+                            <div>
+                                <p class="text-xs text-slate-400 mb-1.5">Liste des joueurs :</p>
+                                ${players.length > 0 ? `
+                                    <div class="flex flex-wrap gap-1.5">
+                                        ${players.map(p => `<span class="text-xs bg-slate-800 border border-slate-700 text-slate-200 px-2 py-0.5 rounded-md">${escapeHtml(String(p))}</span>`).join('')}
+                                    </div>
+                                ` : `
+                                    <p class="text-xs text-slate-500 italic">${online ? 'Aucun joueur connecté actuellement' : 'Serveur non démarré ou non synchronisé'}</p>
+                                `}
+                            </div>
+                        </div>
+
+                        <div class="pt-2.5 border-t border-slate-800/80 flex justify-between items-center text-[11px] text-slate-500">
+                            <span>${escapeHtml(syncLabel)}</span>
+                            <span>${srv.is_rotating ? 'Rotation mensuelle' : 'Map fixe'}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
 
         function toggleRatesModal() {
             document.getElementById('rates-modal').classList.toggle('hidden');
@@ -595,10 +721,7 @@
         }
 
         function backToList() {
-            document.getElementById('poll-vote-view').classList.add('hidden');
-            document.getElementById('poll-results-view').classList.add('hidden');
-            document.getElementById('poll-list-view').classList.remove('hidden');
-            loadPolls();
+            showView('polls');
         }
 
         function toggleAdminModal() {
