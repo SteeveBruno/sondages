@@ -31,43 +31,43 @@
 <body class="text-slate-100 min-h-screen flex flex-col">
 
     <!-- En-tête & Navigation -->
-    <header class="bg-slate-950/90 backdrop-blur-md border-b border-cyan-500/20 py-4 px-4 sm:px-6 sticky top-0 z-40">
-        <div class="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-4">
+    <header class="bg-slate-950/90 backdrop-blur-md border-b border-cyan-500/20 py-6 px-4 sm:px-6 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-6">
             <!-- Logo + Titre -->
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-5 sm:gap-6">
                 <img src="logo.png" alt="Logo Les Orphelins de l'Arche"
                     onerror="this.classList.add('hidden'); document.getElementById('fallback-logo').classList.remove('hidden');"
-                    class="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-cyan-400/60 shadow-lg shadow-cyan-500/20">
-                <div id="fallback-logo" class="hidden w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-cyan-950/80 border-2 border-cyan-400/60 flex items-center justify-center text-cyan-300 font-bold text-2xl">
+                    class="w-36 h-36 sm:w-48 sm:h-48 rounded-full object-cover border-2 border-cyan-400/70 shadow-2xl shadow-cyan-500/25">
+                <div id="fallback-logo" class="hidden w-36 h-36 sm:w-48 sm:h-48 rounded-full bg-cyan-950/80 border-2 border-cyan-400/70 flex items-center justify-center text-cyan-300 font-bold text-6xl">
                     🏛️
                 </div>
                 <div>
-                    <h1 class="text-lg sm:text-xl font-bold tracking-wide text-cyan-300 leading-tight">Les Orphelins de l'Arche</h1>
-                    <p class="text-xs uppercase tracking-widest text-slate-400">ARK: Survival Ascended</p>
+                    <h1 class="text-3xl sm:text-5xl font-bold tracking-wide text-cyan-300 leading-tight">Les Orphelins de l'Arche</h1>
+                    <p class="text-sm sm:text-lg uppercase tracking-widest text-slate-400 mt-1.5">ARK: Survival Ascended</p>
                 </div>
             </div>
 
             <!-- Menu de navigation -->
-            <nav class="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium">
-                <button onclick="backToList()" class="px-3.5 py-2 rounded-lg text-cyan-300 hover:bg-cyan-950/60 border border-transparent hover:border-cyan-500/25 transition">
+            <nav class="flex flex-wrap items-center gap-2.5 text-base sm:text-lg font-medium">
+                <button onclick="backToList()" class="px-5 py-3 rounded-xl text-cyan-300 hover:bg-cyan-950/60 border border-transparent hover:border-cyan-500/25 transition">
                     🗳️ Sondages
                 </button>
-                <button onclick="toggleRatesModal()" class="px-3.5 py-2 rounded-lg text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
+                <button onclick="toggleRatesModal()" class="px-5 py-3 rounded-xl text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
                     📊 Rates du serveur
                 </button>
-                <a href="https://discord.gg/t7D5MFngw" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-lg text-[#7289da] hover:bg-[#5865F2]/15 border border-transparent hover:border-[#5865F2]/40 transition">
+                <a href="https://discord.gg/t7D5MFngw" target="_blank" rel="noopener noreferrer" class="px-5 py-3 rounded-xl text-[#7289da] hover:bg-[#5865F2]/15 border border-transparent hover:border-[#5865F2]/40 transition">
                     💬 Discord
                 </a>
             </nav>
 
             <!-- Profil Discord + Admin -->
-            <div class="flex items-center gap-2.5">
-                <div id="user-profile-header" class="hidden flex items-center gap-2 bg-slate-900 px-3 py-1 rounded-full border border-cyan-500/25">
-                    <img id="header-avatar" src="" alt="Avatar" class="w-6 h-6 rounded-full">
-                    <span id="header-username" class="text-xs font-medium text-slate-200 max-w-[110px] truncate"></span>
-                    <button onclick="logoutDiscord()" class="text-[11px] text-rose-400 hover:text-rose-300 ml-1" title="Se déconnecter">✕</button>
+            <div class="flex items-center gap-3">
+                <div id="user-profile-header" class="hidden flex items-center gap-2.5 bg-slate-900 px-4 py-2 rounded-full border border-cyan-500/25">
+                    <img id="header-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full">
+                    <span id="header-username" class="text-sm sm:text-base font-medium text-slate-200 max-w-[140px] truncate"></span>
+                    <button onclick="logoutDiscord()" class="text-sm text-rose-400 hover:text-rose-300 ml-1" title="Se déconnecter">✕</button>
                 </div>
-                <button id="adminToggleBtn" onclick="toggleAdminModal()" class="text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 rounded-lg transition font-medium">
+                <button id="adminToggleBtn" onclick="toggleAdminModal()" class="text-base sm:text-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 px-5 py-3 rounded-xl transition font-medium">
                     🔒 Admin
                 </button>
             </div>
