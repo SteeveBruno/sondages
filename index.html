@@ -18,9 +18,17 @@
         <div class="flex items-center gap-3">
             <h1 class="text-xl font-bold tracking-wide text-indigo-400">🗳️ Sondages - Les Orphelins de l'Arche</h1>
         </div>
-        <button id="adminToggleBtn" onclick="toggleAdminModal()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded transition font-medium">
-            🔒 Administration
-        </button>
+        <div class="flex items-center gap-3">
+            <!-- Zone profil Discord connecté -->
+            <div id="user-profile-header" class="hidden flex items-center gap-2 bg-slate-900 px-3 py-1 rounded-full border border-slate-700">
+                <img id="header-avatar" src="" alt="Avatar" class="w-6 h-6 rounded-full">
+                <span id="header-username" class="text-xs font-medium text-slate-200"></span>
+                <button onclick="logoutDiscord()" class="text-[11px] text-rose-400 hover:text-rose-300 ml-1" title="Se déconnecter">✕</button>
+            </div>
+            <button id="adminToggleBtn" onclick="toggleAdminModal()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded transition font-medium">
+                🔒 Administration
+            </button>
+        </div>
     </header>
 
     <!-- Contenu Principal -->
@@ -43,11 +51,26 @@
                 <h2 id="active-poll-title" class="text-2xl font-bold mb-2 text-white"></h2>
                 <p id="active-poll-desc" class="text-slate-400 text-sm mb-6"></p>
 
-                <form id="vote-form" onsubmit="submitVote(event)">
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-slate-300 mb-2">Ton Nametag (pseudonyme de jeu) :</label>
-                        <input type="text" id="nametag-input" required placeholder="Ex: GigaChad76" 
-                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500">
+                <!-- Écran de connexion Discord obligatoire pour voter -->
+                <div id="discord-login-prompt" class="bg-slate-900/80 border border-indigo-500/30 rounded-xl p-6 text-center space-y-4">
+                    <p class="text-slate-300 text-sm">Pour garantir l'équité des votes sur le serveur, connecte-toi avec ton compte Discord pour participer.</p>
+                    <button type="button" onclick="loginWithDiscord()" class="inline-flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold px-6 py-3 rounded-lg transition shadow-lg">
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028z"/></svg>
+                        Se connecter avec Discord
+                    </button>
+                </div>
+
+                <!-- Formulaire de vote (visible uniquement une fois connecté) -->
+                <form id="vote-form" onsubmit="submitVote(event)" class="hidden">
+                    <div class="mb-6 flex items-center justify-between bg-slate-900/70 border border-slate-700 rounded-lg px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <img id="form-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full">
+                            <div>
+                                <p class="text-xs text-slate-400">Votant connecté :</p>
+                                <p id="form-username" class="text-sm font-bold text-white"></p>
+                            </div>
+                        </div>
+                        <span class="text-xs bg-emerald-900/50 text-emerald-300 px-2.5 py-1 rounded border border-emerald-700/40">Compte vérifié</span>
                     </div>
 
                     <!-- Conteneur dynamique selon le type de sondage -->
@@ -142,9 +165,65 @@
         let currentPollType = 'priority';
         let sortableInstance = null;
         let isAdminLoggedIn = false;
+        let currentDiscordUser = null;
 
-        window.addEventListener('DOMContentLoaded', loadPolls);
+        window.addEventListener('DOMContentLoaded', async () => {
+            await checkDiscordSession();
+            loadPolls();
+        });
 
+        // --- Gestion Authentification Discord ---
+        async function checkDiscordSession() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            updateAuthUI(session?.user || null);
+
+            supabaseClient.auth.onAuthStateChange((_event, session) => {
+                updateAuthUI(session?.user || null);
+            });
+        }
+
+        function updateAuthUI(user) {
+            currentDiscordUser = user;
+            const headerProfile = document.getElementById('user-profile-header');
+            const loginPrompt = document.getElementById('discord-login-prompt');
+            const voteForm = document.getElementById('vote-form');
+
+            if (user) {
+                const username = user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'Membre Discord';
+                const avatar = user.user_metadata?.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png';
+
+                document.getElementById('header-avatar').src = avatar;
+                document.getElementById('header-username').textContent = username;
+                headerProfile.classList.remove('hidden');
+
+                document.getElementById('form-avatar').src = avatar;
+                document.getElementById('form-username').textContent = username;
+
+                loginPrompt.classList.add('hidden');
+                voteForm.classList.remove('hidden');
+            } else {
+                headerProfile.classList.add('hidden');
+                loginPrompt.classList.remove('hidden');
+                voteForm.classList.add('hidden');
+            }
+        }
+
+        async function loginWithDiscord() {
+            const { error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'discord',
+                options: {
+                    redirectTo: window.location.origin
+                }
+            });
+            if (error) alert("Erreur de connexion Discord : " + error.message);
+        }
+
+        async function logoutDiscord() {
+            await supabaseClient.auth.signOut();
+            updateAuthUI(null);
+        }
+
+        // --- Gestion des Sondages ---
         async function loadPolls() {
             const container = document.getElementById('polls-container');
             const { data, error } = await supabaseClient
@@ -261,13 +340,13 @@
 
         async function submitVote(event) {
             event.preventDefault();
-            const rawNametag = document.getElementById('nametag-input').value;
-            const nametag = rawNametag.trim().toLowerCase();
-
-            if (!nametag) {
-                alert("Entre un nametag valide.");
+            if (!currentDiscordUser) {
+                alert("Tu dois être connecté avec Discord pour voter.");
                 return;
             }
+
+            const discordUsername = currentDiscordUser.user_metadata?.full_name || currentDiscordUser.user_metadata?.name || 'Membre Discord';
+            const discordUserId = 'discord_' + currentDiscordUser.id;
 
             let ranking = [];
 
@@ -287,7 +366,6 @@
                     alert("Écris une réponse.");
                     return;
                 }
-                // Pour le sondage ouvert, on crée l'option à la volée dans la table 'options'
                 const { data: newOpt, error: optErr } = await supabaseClient
                     .from('options')
                     .insert([{ poll_id: currentPollId, text: openText }])
@@ -300,23 +378,17 @@
                 }
                 ranking = [newOpt.id];
             }
-            
-            let browserId = localStorage.getItem('soll_browser_id');
-            if (!browserId) {
-                browserId = 'browser_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
-                localStorage.setItem('soll_browser_id', browserId);
-            }
 
             const { error } = await supabaseClient.from('votes').insert([{
                 poll_id: currentPollId,
-                nametag: nametag,
-                ip_hash: browserId,
+                nametag: discordUsername,
+                ip_hash: discordUserId,
                 ranking: ranking
             }]);
 
             if (error) {
-                if (error.code === '23505' || error.message.includes('duplicate key') || error.message.includes('votes_poll_id_device_key')) {
-                    alert("⚠️ Tu as déjà voté pour ce sondage depuis cet appareil ! Un seul vote par participant est autorisé.");
+                if (error.code === '23505' || error.message.includes('duplicate key')) {
+                    alert("⚠️ Ton compte Discord a déjà voté pour ce sondage !");
                 } else {
                     alert("Erreur lors de l'enregistrement du vote : " + error.message);
                 }
@@ -353,10 +425,9 @@
                         }
                     });
                 } else {
-                    // Pour single ou open, le premier élément du ranking est le choix sélectionné
                     const optId = ranking[0];
                     if (scores[optId]) {
-                        scores[optId].points += 1; // 1 point par vote
+                        scores[optId].points += 1;
                         scores[optId].count++;
                     }
                 }
@@ -407,7 +478,7 @@
 
         function adminLogin() {
             const pwd = document.getElementById('admin-pwd').value;
-            if (pwd === 'Orphelins2026') { // Pense à changer ton mot de passe ici si besoin
+            if (pwd === 'Orphelins2026') { // Remplace 'admin123' par ton mot de passe secret
                 isAdminLoggedIn = true;
                 document.getElementById('admin-login-screen').classList.add('hidden');
                 document.getElementById('admin-dashboard').classList.remove('hidden');
@@ -421,7 +492,7 @@
             const type = document.getElementById('new-poll-type').value;
             const container = document.getElementById('options-input-container');
             if (type === 'open') {
-                container.classList.add('hidden'); // Pas besoin de pré-remplir des propositions pour une question ouverte
+                container.classList.add('hidden');
             } else {
                 container.classList.remove('hidden');
             }
@@ -454,7 +525,6 @@
                 return;
             }
 
-            // Si ce n'est pas un sondage ouvert, on insère les propositions de base
             if (pollType !== 'open') {
                 const optionsArray = optionsText.split('\n').map(o => o.trim()).filter(o => o.length > 0);
                 const optionsToInsert = optionsArray.map(opt => ({
@@ -551,7 +621,7 @@
         }
 
         async function deleteVote(voteId) {
-            if (confirm("Supprimer ce vote ? Cela libérera l'appareil.")) {
+            if (confirm("Supprimer ce vote ? Cela libérera le compte Discord.")) {
                 await supabaseClient.from('votes').delete().eq('id', voteId);
                 loadAdminPolls();
             }
