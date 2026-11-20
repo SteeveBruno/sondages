@@ -418,7 +418,7 @@
     <!-- Script de logique -->
     <script>
         const SUPABASE_URL = 'https://brkkpzxibhggrjzswuxz.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_9fLIE35bCC2h2SO9d0GmLQ_HrVZM4eF';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJya2twenhpYmhnZ3JqenN3dXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NjY2MzcsImV4cCI6MjExMDU0MjYzN30.-ksQpn7U8UO3nLkP0R_iT1TAMDopRE1OO_G4Z96DCHY';
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -479,6 +479,10 @@
                 .from('server_status')
                 .select('*')
                 .order('slot_id', { ascending: true });
+
+            if (error) {
+                console.error('Erreur chargement server_status:', error);
+            }
 
             const servers = (!error && data && data.length > 0) ? data : FALLBACK_SERVERS;
 
