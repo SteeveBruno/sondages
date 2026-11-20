@@ -31,62 +31,64 @@
 <body class="text-slate-100 min-h-screen flex flex-col">
 
     <!-- En-tête & Navigation -->
-    <header class="bg-slate-950/90 backdrop-blur-md border-b border-cyan-500/20 py-6 px-4 sm:px-6 sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-6">
+    <header class="bg-slate-950/90 backdrop-blur-md border-b border-cyan-500/20 py-3 sm:py-5 px-3 sm:px-6 sm:sticky sm:top-0 z-40">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row lg:justify-between lg:items-center gap-2.5 sm:gap-4">
             <!-- Logo + Titre -->
-            <div class="flex items-center gap-5 sm:gap-6">
+            <div class="flex items-center gap-3 sm:gap-5">
                 <button type="button" onclick="showView('home')" title="Retour à l'accueil" class="group rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/70 transition transform hover:scale-105 cursor-pointer shrink-0">
                     <img src="logo.png" alt="Logo Les Orphelins de l'Arche"
                         onerror="this.classList.add('hidden'); document.getElementById('fallback-logo').classList.remove('hidden');"
-                        class="w-36 h-36 sm:w-48 sm:h-48 rounded-full object-cover border-2 border-cyan-400/70 group-hover:border-cyan-300 shadow-2xl shadow-cyan-500/25">
-                    <div id="fallback-logo" class="hidden w-36 h-36 sm:w-48 sm:h-48 rounded-full bg-cyan-950/80 border-2 border-cyan-400/70 group-hover:border-cyan-300 flex items-center justify-center text-cyan-300 font-bold text-6xl">
+                        class="w-14 h-14 sm:w-28 sm:h-28 rounded-full object-cover border-2 border-cyan-400/70 group-hover:border-cyan-300 shadow-lg shadow-cyan-500/20">
+                    <div id="fallback-logo" class="hidden w-14 h-14 sm:w-28 sm:h-28 rounded-full bg-cyan-950/80 border-2 border-cyan-400/70 group-hover:border-cyan-300 flex items-center justify-center text-cyan-300 font-bold text-2xl sm:text-4xl">
                         🏛️
                     </div>
                 </button>
-                <div>
-                    <h1 class="text-3xl sm:text-5xl font-bold tracking-wide text-cyan-300 leading-tight">Les Orphelins de l'Arche</h1>
-                    <p class="text-sm sm:text-lg uppercase tracking-widest text-slate-400 mt-1.5">ARK: Survival Ascended</p>
+                <div class="min-w-0">
+                    <h1 class="text-xl sm:text-4xl font-bold tracking-wide text-cyan-300 leading-tight">Les Orphelins de l'Arche</h1>
+                    <p class="text-[11px] sm:text-sm uppercase tracking-widest text-slate-400 mt-0.5">ARK: Survival Ascended</p>
                 </div>
             </div>
 
-            <!-- Menu de navigation -->
-            <nav class="flex flex-wrap items-center gap-2.5 text-base sm:text-lg font-medium">
-                <button onclick="showView('home')" class="px-5 py-3 rounded-xl text-cyan-300 hover:bg-cyan-950/60 border border-transparent hover:border-cyan-500/25 transition">
-                    🏠 Accueil
-                </button>
-                <button onclick="showView('polls')" class="px-5 py-3 rounded-xl text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
-                    🗳️ Sondages
-                </button>
-                <button onclick="showView('status')" class="px-5 py-3 rounded-xl text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
-                    🖥️ Statut des serveurs
-                </button>
-                <button onclick="showView('rules')" class="px-5 py-3 rounded-xl text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
-                    📜 Règlements
-                </button>
-                <button onclick="toggleRatesModal()" class="px-5 py-3 rounded-xl text-slate-200 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition">
-                    📊 Rates du cluster
-                </button>
-                <a href="https://discord.gg/t7D5MFngw" target="_blank" rel="noopener noreferrer" class="px-5 py-3 rounded-xl text-[#7289da] hover:bg-[#5865F2]/15 border border-transparent hover:border-[#5865F2]/40 transition">
-                    💬 Discord
-                </a>
-            </nav>
+            <!-- Menu de navigation + Profil Discord + Admin -->
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
+                <nav class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-base font-medium">
+                    <button onclick="showView('home')" class="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-cyan-300 hover:bg-cyan-950/60 border border-slate-800/80 sm:border-transparent hover:border-cyan-500/25 transition">
+                        🏠 Accueil
+                    </button>
+                    <button onclick="showView('polls')" class="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-slate-200 hover:bg-slate-800 border border-slate-800/80 sm:border-transparent hover:border-slate-700 transition">
+                        🗳️ Sondages
+                    </button>
+                    <button onclick="showView('status')" class="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-slate-200 hover:bg-slate-800 border border-slate-800/80 sm:border-transparent hover:border-slate-700 transition">
+                        🖥️ Statut des serveurs
+                    </button>
+                    <button onclick="showView('rules')" class="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-slate-200 hover:bg-slate-800 border border-slate-800/80 sm:border-transparent hover:border-slate-700 transition">
+                        📜 Règlements
+                    </button>
+                    <button onclick="toggleRatesModal()" class="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-slate-200 hover:bg-slate-800 border border-slate-800/80 sm:border-transparent hover:border-slate-700 transition">
+                        📊 Rates du cluster
+                    </button>
+                    <a href="https://discord.gg/t7D5MFngw" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-[#7289da] hover:bg-[#5865F2]/15 border border-slate-800/80 sm:border-transparent hover:border-[#5865F2]/40 transition">
+                        💬 Discord
+                    </a>
+                </nav>
 
-            <!-- Profil Discord + Admin -->
-            <div class="flex items-center gap-3">
-                <div id="user-profile-header" class="hidden flex items-center gap-2.5 bg-slate-900 px-4 py-2 rounded-full border border-cyan-500/25">
-                    <img id="header-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full">
-                    <span id="header-username" class="text-sm sm:text-base font-medium text-slate-200 max-w-[140px] truncate"></span>
-                    <button onclick="logoutDiscord()" class="text-sm text-rose-400 hover:text-rose-300 ml-1" title="Se déconnecter">✕</button>
+                <!-- Profil Discord + Admin -->
+                <div class="flex items-center gap-1.5 sm:gap-2.5">
+                    <div id="user-profile-header" class="hidden flex items-center gap-2 bg-slate-900 px-2.5 py-1 rounded-full border border-cyan-500/25">
+                        <img id="header-avatar" src="" alt="Avatar" class="w-6 h-6 sm:w-7 sm:h-7 rounded-full">
+                        <span id="header-username" class="text-xs sm:text-sm font-medium text-slate-200 max-w-[110px] truncate"></span>
+                        <button onclick="logoutDiscord()" class="text-xs text-rose-400 hover:text-rose-300 ml-0.5" title="Se déconnecter">✕</button>
+                    </div>
+                    <button id="adminToggleBtn" onclick="toggleAdminModal()" class="text-xs sm:text-base bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl transition font-medium">
+                        🔒 Admin
+                    </button>
                 </div>
-                <button id="adminToggleBtn" onclick="toggleAdminModal()" class="text-base sm:text-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 px-5 py-3 rounded-xl transition font-medium">
-                    🔒 Admin
-                </button>
             </div>
         </div>
     </header>
 
     <!-- Contenu Principal -->
-    <main class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
+    <main class="flex-grow container mx-auto px-3 sm:px-4 py-5 sm:py-8 max-w-5xl">
 
         <!-- Vue Accueil (Bienvenue) -->
         <div id="home-view" class="space-y-8">
