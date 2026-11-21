@@ -483,6 +483,18 @@
             return noms[clean] || clean.replace(/([a-z])([A-Z])/g, '$1 $2');
         }
 
+        function estCarteRotative(srv, mapDisplay) {
+            if (/tournant/i.test(srv.name || '')) return true;
+            return mapDisplay === 'The Center';
+        }
+
+        function badgeTypeCarte(isRotating) {
+            if (isRotating) {
+                return '<span class="inline-block mt-1.5 text-[11px] font-medium bg-amber-950/80 text-amber-300 border border-amber-600/40 px-2.5 py-0.5 rounded-full">↻ Rotative / mois</span>';
+            }
+            return '<span class="inline-block mt-1.5 text-[11px] font-medium bg-sky-950/80 text-sky-300 border border-sky-500/40 px-2.5 py-0.5 rounded-full">Fixe</span>';
+        }
+
         async function loadServerStatus() {
             const grid = document.getElementById('server-status-grid');
             const totalBadge = document.getElementById('total-players-badge');
@@ -511,8 +523,8 @@
                     const count = Number(srv.players) || 0;
                     const max = Number(srv.max_players) || 20;
                     const players = Array.isArray(srv.player_names) ? srv.player_names : [];
-                    const isRotating = /tournant/i.test(srv.name || '');
                     const mapDisplay = formaterNomCarte(srv.map);
+                    const isRotating = estCarteRotative(srv, mapDisplay);
 
                     return `
                         <div class="ark-card rounded-2xl p-5 flex flex-col justify-between gap-4 transition min-w-0 overflow-hidden">
@@ -521,8 +533,7 @@
                                     <div class="min-w-0 flex-1">
                                         <span class="block text-xs uppercase tracking-wider text-slate-400">Serveur #${idx + 1}</span>
                                         <h3 class="text-xl font-bold text-white mt-0.5 truncate">${escapeHtml(mapDisplay)}</h3>
-                                        ${isRotating ? '<span class="inline-block mt-1 text-[11px] bg-amber-950/80 text-amber-300 border border-amber-600/40 px-2 py-0.5 rounded-full">↻ Rotative / mois</span>' : ''}
-                                        <p class="text-[11px] text-slate-400 mt-1 truncate" title="${escapeHtml(srv.name || '')}">${escapeHtml(srv.name || '')}</p>
+                                        ${badgeTypeCarte(isRotating)}
                                     </div>
                                     <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${online ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-600/40' : 'bg-rose-950/90 text-rose-300 border border-rose-600/40'}">
                                         <span class="w-2 h-2 rounded-full ${online ? 'bg-emerald-400' : 'bg-rose-400'}"></span>
