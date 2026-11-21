@@ -421,18 +421,9 @@
     <script>
         const SUPABASE_URL = 'https://brkkpzxibhggrjzswuxz.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJya2twenhpYmhnZ3JqenN3dXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NjY2MzcsImV4cCI6MjExMDU0MjYzN30.-ksQpn7U8UO3nLkP0R_iT1TAMDopRE1OO_G4Z96DCHY';
+        const WORKER_STATUS_URL = 'https://ark-status-bot.st33v3.workers.dev';
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        const FALLBACK_SERVERS = [
-            { slot_id: 'slot-1', slot_label: 'Serveur #1', map_name: 'The Island', is_rotating: false, is_online: false, players_online: 0, max_players: 20, players_list: [] },
-            { slot_id: 'slot-2', slot_label: 'Serveur #2', map_name: 'Ragnarok', is_rotating: false, is_online: false, players_online: 0, max_players: 20, players_list: [] },
-            { slot_id: 'slot-3', slot_label: 'Serveur #3', map_name: 'Astraeos', is_rotating: false, is_online: false, players_online: 0, max_players: 20, players_list: [] },
-            { slot_id: 'slot-4', slot_label: 'Serveur #4', map_name: 'Lost Colony', is_rotating: false, is_online: false, players_online: 0, max_players: 20, players_list: [] },
-            { slot_id: 'slot-5', slot_label: 'Serveur #5', map_name: 'The Center', is_rotating: false, is_online: false, players_online: 0, max_players: 20, players_list: [] },
-            { slot_id: 'rot-1', slot_label: 'Slot Tournant #1', map_name: 'Extinction', is_rotating: true, is_online: false, players_online: 0, max_players: 20, players_list: [] },
-            { slot_id: 'rot-2', slot_label: 'Slot Tournant #2', map_name: 'Scorched Earth', is_rotating: true, is_online: false, players_online: 0, max_players: 20, players_list: [] }
-        ];
 
         let currentPollId = null;
         let currentPollType = 'priority';
@@ -473,77 +464,102 @@
             }
         }
 
+        function formaterNomCarte(rawMap) {
+            if (!rawMap) return 'Inconnue';
+            const clean = rawMap.replace(/_WP$/i, '');
+            const noms = {
+                'TheIsland': 'The Island',
+                'ScorchedEarth': 'Scorched Earth',
+                'Aberration': 'Aberration',
+                'Extinction': 'Extinction',
+                'TheCenter': 'The Center',
+                'Ragnarok': 'Ragnarok',
+                'Valguero': 'Valguero',
+                'Astraeos': 'Astraeos',
+                'LostColony': 'Lost Colony',
+                'Gen1': 'Genesis Part 1',
+                'Gen2': 'Genesis Part 2'
+            };
+            return noms[clean] || clean.replace(/([a-z])([A-Z])/g, '$1 $2');
+        }
+
         async function loadServerStatus() {
             const grid = document.getElementById('server-status-grid');
             const totalBadge = document.getElementById('total-players-badge');
 
-            const { data, error } = await supabaseClient
-                .from('server_status')
-                .select('*')
-                .order('slot_id', { ascending: true });
+            try {
+                const res = await fetch(WORKER_STATUS_URL);
+                const payload = await res.json();
 
-            if (error) {
-                console.error('Erreur chargement server_status:', error);
-            }
+                if (!payload.ok || !Array.isArray(payload.servers)) {
+                    throw new Error(payload.error || 'Réponse invalide du Worker');
+                }
 
-            const servers = (!error && data && data.length > 0) ? data : FALLBACK_SERVERS;
+                const servers = payload.servers;
+                const totalOnlinePlayers = servers
+                    .filter(s => s.status === 'started')
+                    .reduce((sum, s) => sum + (Number(s.players) || 0), 0);
 
-            const totalOnlinePlayers = servers
-                .filter(s => s.is_online)
-                .reduce((sum, s) => sum + (Number(s.players_online) || 0), 0);
+                totalBadge.textContent = `👥 ${totalOnlinePlayers} joueur${totalOnlinePlayers > 1 ? 's' : ''} en ligne`;
 
-            totalBadge.textContent = `👥 ${totalOnlinePlayers} joueur${totalOnlinePlayers > 1 ? 's' : ''} en ligne`;
+                const syncTime = payload.updated_at
+                    ? `MAJ : ${new Date(payload.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                    : 'Synchronisé';
 
-            grid.innerHTML = servers.map(srv => {
-                const online = Boolean(srv.is_online);
-                const count = Number(srv.players_online) || 0;
-                const max = Number(srv.max_players) || 20;
-                const players = Array.isArray(srv.players_list) ? srv.players_list : [];
-                const syncLabel = srv.updated_at
-                    ? `MAJ : ${new Date(srv.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                    : 'En attente du bot';
+                grid.innerHTML = servers.map((srv, idx) => {
+                    const online = srv.status === 'started';
+                    const count = Number(srv.players) || 0;
+                    const max = Number(srv.max_players) || 20;
+                    const players = Array.isArray(srv.player_names) ? srv.player_names : [];
+                    const isRotating = /tournant/i.test(srv.name || '');
+                    const mapDisplay = formaterNomCarte(srv.map);
 
-                return `
-                    <div class="ark-card rounded-2xl p-5 flex flex-col justify-between gap-4 transition">
-                        <div>
-                            <div class="flex items-start justify-between gap-2 mb-3">
-                                <div>
-                                    <div class="flex items-center gap-2 flex-wrap">
-                                        <span class="text-xs uppercase tracking-wider text-slate-400">${escapeHtml(srv.slot_label || '')}</span>
-                                        ${srv.is_rotating ? '<span class="text-[11px] bg-amber-950/80 text-amber-300 border border-amber-600/40 px-2 py-0.5 rounded-full">↻ Rotative / mois</span>' : ''}
-                                    </div>
-                                    <h3 class="text-xl font-bold text-white mt-0.5">${escapeHtml(srv.map_name)}</h3>
-                                </div>
-                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${online ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-600/40' : 'bg-rose-950/90 text-rose-300 border border-rose-600/40'}">
-                                    <span class="w-2 h-2 rounded-full ${online ? 'bg-emerald-400' : 'bg-rose-400'}"></span>
-                                    ${online ? 'En ligne' : 'Hors ligne'}
-                                </span>
-                            </div>
-
-                            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 mb-3 flex items-center justify-between">
-                                <span class="text-xs text-slate-400">Joueurs connectés</span>
-                                <span class="text-sm font-bold ${online ? 'text-cyan-300' : 'text-slate-500'}">${count} / ${max}</span>
-                            </div>
-
+                    return `
+                        <div class="ark-card rounded-2xl p-5 flex flex-col justify-between gap-4 transition">
                             <div>
-                                <p class="text-xs text-slate-400 mb-1.5">Liste des joueurs :</p>
-                                ${players.length > 0 ? `
-                                    <div class="flex flex-wrap gap-1.5">
-                                        ${players.map(p => `<span class="text-xs bg-slate-800 border border-slate-700 text-slate-200 px-2 py-0.5 rounded-md">${escapeHtml(String(p))}</span>`).join('')}
+                                <div class="flex items-start justify-between gap-2 mb-3">
+                                    <div>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-xs uppercase tracking-wider text-slate-400">Serveur #${idx + 1}</span>
+                                            ${isRotating ? '<span class="text-[11px] bg-amber-950/80 text-amber-300 border border-amber-600/40 px-2 py-0.5 rounded-full">↻ Rotative / mois</span>' : ''}
+                                        </div>
+                                        <h3 class="text-xl font-bold text-white mt-0.5">${escapeHtml(mapDisplay)}</h3>
+                                        <p class="text-[11px] text-slate-400 mt-0.5 truncate">${escapeHtml(srv.name || '')}</p>
                                     </div>
-                                ` : `
-                                    <p class="text-xs text-slate-500 italic">${online ? 'Aucun joueur connecté actuellement' : 'Serveur non démarré ou non synchronisé'}</p>
-                                `}
+                                    <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${online ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-600/40' : 'bg-rose-950/90 text-rose-300 border border-rose-600/40'}">
+                                        <span class="w-2 h-2 rounded-full ${online ? 'bg-emerald-400' : 'bg-rose-400'}"></span>
+                                        ${online ? 'En ligne' : 'Hors ligne'}
+                                    </span>
+                                </div>
+
+                                <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 mb-3 flex items-center justify-between">
+                                    <span class="text-xs text-slate-400">Joueurs connectés</span>
+                                    <span class="text-sm font-bold ${online ? 'text-cyan-300' : 'text-slate-500'}">${count} / ${max}</span>
+                                </div>
+
+                                <div>
+                                    <p class="text-xs text-slate-400 mb-1.5">Liste des joueurs :</p>
+                                    ${players.length > 0 ? `
+                                        <div class="flex flex-wrap gap-1.5">
+                                            ${players.map(p => `<span class="text-xs bg-slate-800 border border-slate-700 text-slate-200 px-2 py-0.5 rounded-md">${escapeHtml(String(p))}</span>`).join('')}
+                                        </div>
+                                    ` : `
+                                        <p class="text-xs text-slate-500 italic">${online ? 'Aucun joueur connecté actuellement' : 'Serveur non démarré'}</p>
+                                    `}
+                                </div>
+                            </div>
+
+                            <div class="pt-2.5 border-t border-slate-800/80 flex justify-between items-center text-[11px] text-slate-500">
+                                <span>${escapeHtml(syncTime)}</span>
+                                <span>${isRotating ? 'Rotation mensuelle' : 'Map fixe'}</span>
                             </div>
                         </div>
-
-                        <div class="pt-2.5 border-t border-slate-800/80 flex justify-between items-center text-[11px] text-slate-500">
-                            <span>${escapeHtml(syncLabel)}</span>
-                            <span>${srv.is_rotating ? 'Rotation mensuelle' : 'Map fixe'}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Erreur chargement statut serveurs:', err);
+                grid.innerHTML = `<p class="text-rose-400 col-span-full text-center py-8">Impossible de récupérer l'état des serveurs en direct.</p>`;
+            }
         }
 
         function toggleRatesModal() {
