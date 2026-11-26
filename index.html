@@ -434,6 +434,7 @@
         let sortableInstance = null;
         let currentDiscordUser = null;
         let statusRefreshInterval = null;
+        let pollsById = {};
 
         function estAdminAutorise(user) {
             return Boolean(user && user.id === ADMIN_DISCORD_UID);
@@ -671,6 +672,9 @@
                 return;
             }
 
+            pollsById = {};
+            (data || []).forEach(p => { pollsById[p.id] = p; });
+
             if (data.length === 0) {
                 container.innerHTML = `<p class="text-slate-400 text-center py-8">Aucun sondage pour le moment.</p>`;
                 return;
@@ -702,7 +706,7 @@
                         </div>
                         <div class="flex gap-2 shrink-0">
                             ${poll.is_open ? `<button onclick="openVoteView('${poll.id}')" class="bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-sm font-bold px-4 py-2 rounded-lg transition">Voter</button>` : ''}
-                            <button onclick="openResultsView('${poll.id}', '${escapeHtml(poll.title).replace(/'/g, "\\'")}', '${poll.poll_type || 'priority'}')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">Résultats</button>
+                            <button onclick="openResultsView('${poll.id}')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">Résultats</button>
                         </div>
                     </div>
                 `;
@@ -864,7 +868,17 @@
             backToList();
         }
 
-        async function openResultsView(pollId, pollTitle, pollType) {
+        async function openResultsView(pollId) {
+            let poll = pollsById[pollId];
+            if (!poll) {
+                const { data } = await supabaseClient.from('polls').select('*').eq('id', pollId).single();
+                poll = data;
+            }
+            if (!poll) return;
+
+            const pollTitle = poll.title;
+            const pollType = poll.poll_type || 'priority';
+
             document.getElementById('result-poll-title').textContent = pollTitle;
             
             const badge = document.getElementById('result-type-badge');
@@ -877,12 +891,12 @@
             const { data: votes } = await supabaseClient.from('votes').select('*').eq('poll_id', pollId);
 
             const scores = {};
-            options.forEach(opt => scores[opt.id] = { text: opt.text, points: 0, count: 0 });
+            (options || []).forEach(opt => scores[opt.id] = { text: opt.text, points: 0, count: 0 });
 
-            votes.forEach(vote => {
+            (votes || []).forEach(vote => {
                 const ranking = Array.isArray(vote.ranking) ? vote.ranking : [];
                 if (pollType === 'priority') {
-                    const numOptions = options.length;
+                    const numOptions = (options || []).length;
                     ranking.forEach((optId, index) => {
                         const points = numOptions - index;
                         if (scores[optId]) {
@@ -912,7 +926,7 @@
             const medals = ['🥇', '🥈', '🥉'];
 
             const container = document.getElementById('results-container');
-            if (votes.length === 0) {
+            if (!votes || votes.length === 0) {
                 container.innerHTML = `<p class="text-slate-400 text-center py-6">Aucun vote enregistré pour l'instant.</p>`;
             } else {
                 container.innerHTML = sortedOptions.map((opt, index) => {
