@@ -396,6 +396,7 @@
                             <select id="new-poll-type" onchange="handlePollTypeChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500">
                                 <option value="priority">Sondage de priorité (Classement Borda)</option>
                                 <option value="single">Sondage à réponse unique (QCM)</option>
+                                <option value="multiple">Sondage à choix multiples (Cases à cocher)</option>
                                 <option value="open">Sondage à réponse libre (Écrire sa propre réponse)</option>
                             </select>
                         </div>
@@ -436,6 +437,13 @@
 
         function estAdminAutorise(user) {
             return Boolean(user && user.id === ADMIN_DISCORD_UID);
+        }
+
+        function libelleTypeSondage(pollType) {
+            if (pollType === 'single') return 'Réponse unique';
+            if (pollType === 'multiple') return 'Choix multiples';
+            if (pollType === 'open') return 'Réponse libre';
+            return 'Priorité (Borda)';
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -672,9 +680,7 @@
             const currentDiscordTag = currentDiscordUser ? 'discord_' + currentDiscordUser.id : null;
 
             container.innerHTML = data.map(poll => {
-                let typeLabel = 'Priorité (Borda)';
-                if (poll.poll_type === 'single') typeLabel = 'Réponse unique';
-                if (poll.poll_type === 'open') typeLabel = 'Réponse libre';
+                const typeLabel = libelleTypeSondage(poll.poll_type);
 
                 const pollVotes = (allVotes || []).filter(v => v.poll_id === poll.id);
                 const voteCount = pollVotes.length;
@@ -752,6 +758,20 @@
                     </div>
                 `;
 
+            } else if (currentPollType === 'multiple') {
+                container.innerHTML = `
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Choisis une ou plusieurs options :</label>
+                    <p class="text-xs text-slate-400 mb-3">Coche toutes les réponses qui te conviennent.</p>
+                    <div class="space-y-2">
+                        ${options.map(opt => `
+                            <label class="flex items-center gap-3 bg-slate-900 border border-slate-700 p-3.5 rounded-lg cursor-pointer hover:border-cyan-500 transition">
+                                <input type="checkbox" name="multiple-options" value="${opt.id}" class="w-4 h-4 rounded text-cyan-500 bg-slate-800 border-slate-700 focus:ring-cyan-500">
+                                <span class="text-slate-200 text-sm font-medium">${escapeHtml(opt.text)}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                `;
+
             } else if (currentPollType === 'open') {
                 container.innerHTML = `
                     <label class="block text-sm font-medium text-slate-300 mb-2">Écris ta réponse :</label>
@@ -798,6 +818,13 @@
                     return;
                 }
                 ranking = [selectedRadio.value];
+            } else if (currentPollType === 'multiple') {
+                const checkedBoxes = document.querySelectorAll('input[name="multiple-options"]:checked');
+                if (checkedBoxes.length === 0) {
+                    alert("Sélectionne au moins une option.");
+                    return;
+                }
+                ranking = Array.from(checkedBoxes).map(cb => cb.value);
             } else if (currentPollType === 'open') {
                 const openText = document.getElementById('open-answer-input').value.trim();
                 if (!openText) {
@@ -842,6 +869,7 @@
             
             const badge = document.getElementById('result-type-badge');
             if (pollType === 'single') badge.textContent = 'Choix unique';
+            else if (pollType === 'multiple') badge.textContent = 'Choix multiples';
             else if (pollType === 'open') badge.textContent = 'Réponse libre';
             else badge.textContent = 'Méthode de Borda';
 
@@ -852,13 +880,20 @@
             options.forEach(opt => scores[opt.id] = { text: opt.text, points: 0, count: 0 });
 
             votes.forEach(vote => {
-                const ranking = vote.ranking;
+                const ranking = Array.isArray(vote.ranking) ? vote.ranking : [];
                 if (pollType === 'priority') {
                     const numOptions = options.length;
                     ranking.forEach((optId, index) => {
                         const points = numOptions - index;
                         if (scores[optId]) {
                             scores[optId].points += points;
+                            scores[optId].count++;
+                        }
+                    });
+                } else if (pollType === 'multiple') {
+                    ranking.forEach(optId => {
+                        if (scores[optId]) {
+                            scores[optId].points += 1;
                             scores[optId].count++;
                         }
                     });
@@ -986,9 +1021,7 @@
 
             container.innerHTML = '';
             for (const poll of polls) {
-                let typeLabel = 'Priorité (Borda)';
-                if (poll.poll_type === 'single') typeLabel = 'Réponse unique';
-                if (poll.poll_type === 'open') typeLabel = 'Réponse libre';
+                const typeLabel = libelleTypeSondage(poll.poll_type);
 
                 const { data: votes } = await supabaseClient.from('votes').select('*').eq('poll_id', poll.id);
 
